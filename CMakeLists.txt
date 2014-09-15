@@ -7,7 +7,7 @@ SET(PROJECT_VERSION_MINOR 1)
 set(PROJECT_VERSION_PATCH 0)
 set(PROJECT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
 
-SET(TARGET_LIB "lib_gdelta.so")
+SET(TARGET_LIB "lib_gfilter.so")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -g -Wno-format-extra-args")
 SET(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -g")
 
@@ -23,7 +23,7 @@ message("INCLUDE_DIRECTORIES:${dirs}")
 SET(BUILD_TARGET_DIR "${CMAKE_CURRENT_SOURCE_DIR}/target" CACHE STRING "Put all binary output in target")
 SET(LIBRARY_OUTPUT_PATH "${BUILD_TARGET_DIR}")
 SET(EXECUTABLE_OUTPUT_PATH "${BUILD_TARGET_DIR}")
-SET(RUNTIME_OUTPUT_NAME gdelta)
+SET(RUNTIME_OUTPUT_NAME gfilter)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include_directories( ${PROJECT_SOURCE_DIR} ${BUILD_TARGET_DIR} ${JANSSON_INCLUDE_DIRS} )
@@ -55,23 +55,24 @@ link_directories( ${BUILD_TARGET_DIR} /usr/lib /usr/local/lib )
 
 set(TARGET_LIB_FILES
   FireLog.cpp 
-  gdelta.cpp
+  gfilter.cpp
+  delta.cpp
   )
 
-add_library(_gdelta SHARED ${TARGET_LIB_FILES})
-target_link_libraries(_gdelta ${JANSSON_LIB} )
-set_target_properties(_gdelta PROPERTIES 
+add_library(_gfilter SHARED ${TARGET_LIB_FILES})
+target_link_libraries(_gfilter ${JANSSON_LIB} )
+set_target_properties(_gfilter PROPERTIES 
     VERSION ${PROJECT_VERSION_STRING} 
     SOVERSION ${PROJECT_VERSION_MAJOR}
     )
   
-add_executable(gdelta gdelta_main.cpp)
-add_dependencies(gdelta _gdelta)
-target_link_libraries(gdelta ${JANSSON_LIB} ${TARGET_LIB} )
+add_executable(gfilter gfilter.cpp)
+add_dependencies(gfilter _gfilter)
+target_link_libraries(gfilter ${JANSSON_LIB} ${TARGET_LIB} )
 
 # add_executable(test 
 # test/test.cpp)
-#add_dependencies(test _gdelta)
+#add_dependencies(test _gfilter)
 #target_link_libraries(test ${TARGET_LIB} )
 
 #
@@ -84,7 +85,7 @@ set(TARGET_INSTALL_BIN_DIR       bin CACHE PATH "Installation directory for exec
 set(TARGET_INSTALL_INCLUDE_DIR   include CACHE PATH "Installation directory for header files")
 
 
-INSTALL(TARGETS _gdelta DESTINATION ${TARGET_INSTALL_LIB_DIR})
-INSTALL(TARGETS gdelta DESTINATION ${TARGET_INSTALL_BIN_DIR})
-INSTALL(FILES FireLog.h gdelta.hpp DESTINATION ${TARGET_INSTALL_INCLUDE_DIR})
+INSTALL(TARGETS _gfilter DESTINATION ${TARGET_INSTALL_LIB_DIR})
+INSTALL(TARGETS gfilter DESTINATION ${TARGET_INSTALL_BIN_DIR})
+INSTALL(FILES FireLog.h gfilter.hpp DESTINATION ${TARGET_INSTALL_INCLUDE_DIR})
 
