@@ -14,77 +14,96 @@ using namespace std;
 using namespace gfilter;
 
 //////////////////// OStreamFilter ////////////////
-int OStreamFilter::writeln(const char *value) { 
-  (*pos) << value << endl;
-  return 0;
+int
+OStreamFilter::writeln (const char *value) {
+    (*pos) << value << endl;
+    return 0;
 };
 
-static OStreamFilter osf(cout);
-static IGFilter *pHead = &osf;
+//////////////////// StringSink  ////////////////
+int
+StringSink::writeln (const char *value) {
+	strings.push_back(string(value));
+    return 0;
+};
+
+////////////////// main ////////////////////////
+static OStreamFilter osf (cout);
+static IGFilter * pHead = &osf;
 static vector<IGFilterPtr> filters;
 
-static void help() {
-	cout << "gfilter GCODE filter v" << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH << endl;
-	cout << "Copyright 2014, Karl Lew" << endl;
-	cout << "https://github.com/firepick1/gfilter/wiki" << endl;
-	cout << endl;
+static void
+help () {
+    cout << "gfilter GCODE filter v" << VERSION_MAJOR << "." <<
+         VERSION_MINOR << "." << VERSION_PATCH << endl;
+    cout << "Copyright 2014, Karl Lew" << endl;
+    cout << "https://github.com/firepick1/gfilter/wiki" << endl;
+    cout << endl;
 }
 
-static bool parseArgs(int argc, char *argv[], 
-  int &jsonIndent) 
-{
-  firelog_level(FIRELOG_INFO);
- 
-  if (argc <= 1) {
-    return true;
-  }
+static bool
+parseArgs (int argc, char *argv[], int &jsonIndent) {
+    firelog_level (FIRELOG_INFO);
 
-  for (int i = 1; i < argc; i++) {
-    if (argv[i][0] == 0) {
-      // empty argument
-    } else if (strcmp("-h",argv[i])==0 || strcmp("--help", argv[i])==0) {
-      help();
-	  exit(0);
-    } else if (strcmp("--delta", argv[i]) == 0) {
-	  cout << "create delta filter" << endl;
-	  DeltaFilterPtr pDelta = new DeltaFilter(*pHead);
-	  pHead = pDelta;
-	  filters.push_back(pDelta);
-    } else if (strcmp("--warn", argv[i]) == 0) {
-      firelog_level(FIRELOG_WARN);
-    } else if (strcmp("--error", argv[i]) == 0) {
-      firelog_level(FIRELOG_ERROR);
-    } else if (strcmp("--info", argv[i]) == 0) {
-      firelog_level(FIRELOG_INFO);
-    } else if (strcmp("--debug", argv[i]) == 0) {
-      firelog_level(FIRELOG_DEBUG);
-    } else if (strcmp("--trace", argv[i]) == 0) {
-      firelog_level(FIRELOG_TRACE);
-    } else {
-      LOGERROR1("unknown gcode argument: '%s'", argv[i]);
-      return false;
+    if (argc <= 1) {
+        return true;
     }
-  }
-  return true;
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == 0) {
+            // empty argument
+        } else if (strcmp ("-h", argv[i]) == 0 || strcmp ("--help", argv[i]) == 0) {
+            help ();
+            exit (0);
+        } else if (strcmp ("--xyz", argv[i]) == 0) {
+            cout << "create xyz filter" << endl;
+            XYZFilterPtr pXYZ = new XYZFilter (*pHead);
+            pHead = pXYZ;
+            filters.push_back (pXYZ);
+        } else if (strcmp ("--delta", argv[i]) == 0) {
+            cout << "create delta filter" << endl;
+            DeltaFilterPtr
+            pDelta = new DeltaFilter (*pHead);
+            pHead = pDelta;
+            filters.push_back (pDelta);
+        } else if (strcmp ("--warn", argv[i]) == 0) {
+            firelog_level (FIRELOG_WARN);
+        } else if (strcmp ("--error", argv[i]) == 0) {
+            firelog_level (FIRELOG_ERROR);
+        } else if (strcmp ("--info", argv[i]) == 0) {
+            firelog_level (FIRELOG_INFO);
+        } else if (strcmp ("--debug", argv[i]) == 0) {
+            firelog_level (FIRELOG_DEBUG);
+        } else if (strcmp ("--trace", argv[i]) == 0) {
+            firelog_level (FIRELOG_TRACE);
+        } else {
+            LOGERROR1 ("unknown gcode argument: '%s'", argv[i]);
+            return false;
+        }
+    }
+    return true;
 }
 
-int main(int argc, char *argv[]) {
-  int jsonIndent = 2;
-  bool argsOk = parseArgs(argc, argv, jsonIndent);
-  if (!argsOk) {
-    help();
-    exit(-1);
-  }
+int
+main (int argc, char *argv[]) {
+    int jsonIndent = 2;
+    bool argsOk = parseArgs (argc, argv, jsonIndent);
 
-  cout << pHead->name() << endl;
+    if (!argsOk) {
+        help ();
+        exit (-1);
+    }
 
-  for (string line; getline(cin, line); ) {
-	  pHead->writeln(line.c_str());
-  }
+    cout << pHead->name () << endl;
 
-  for (int i=0; i < filters.size(); i++) {
-    delete filters[i];
-  }
+    for (string line; getline (cin, line);) {
+        pHead->writeln (line.c_str ());
+    }
 
-  return 0;
+    for (int i = 0; i < filters.size (); i++) {
+        delete
+        filters[i];
+    }
+
+    return 0;
 }

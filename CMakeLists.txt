@@ -57,6 +57,8 @@ set(TARGET_LIB_FILES
   FireLog.cpp 
   gfilter.cpp
   delta.cpp
+  xyzfilter.cpp
+  matcher.cpp
   )
 
 add_library(_gfilter SHARED ${TARGET_LIB_FILES})
@@ -70,10 +72,10 @@ add_executable(gfilter gfilter.cpp)
 add_dependencies(gfilter _gfilter)
 target_link_libraries(gfilter ${JANSSON_LIB} ${TARGET_LIB} )
 
-# add_executable(test 
-# test/test.cpp)
-#add_dependencies(test _gfilter)
-#target_link_libraries(test ${TARGET_LIB} )
+add_executable(test 
+  test/test.cpp)
+add_dependencies(test _gfilter)
+target_link_libraries(test ${TARGET_LIB} )
 
 #
 # Installation preparation.

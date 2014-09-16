@@ -16,8 +16,10 @@ DeltaFilter::DeltaFilter(IGFilter &next) : GFilterBase(next) {
 }
 
 int DeltaFilter::writeln(const char *value) {
-   if (strcmp(value,"G0") == 0) {
-	   _next.writeln("G0X0Y0Z");
+   int chars = g0g1.match(value);
+
+   if (chars) {
+	   _next.writeln("DELTAG0G1-goes-here");
    } else {
 	   _next.writeln(value);
    }
