@@ -144,10 +144,12 @@ void testPointOffsetFilter() {
 	ASSERTGCOORD(GCoord(.2,0.01,.002), xyz.getOffsetAt(GCoord(2,1,2)));
 	ASSERTGCOORD(GCoord(.21,0.021,.0021), xyz.getOffsetAt(GCoord(2.1,2.1,2.1)));
 	ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.getOffsetAt(GCoord(2.9,2.9,2.9))); // N=1
+
+	cout << "Testing neighborhood starvation with points exterior to lattice" << endl;
 	ASSERTGCOORD(GCoord(0.19,0.019,0.0021), xyz.getOffsetAt(GCoord(1.9,1.9,2.1))); // N=8
 	ASSERTGCOORD(GCoord(0.19,0.019,0.0025), xyz.getOffsetAt(GCoord(1.9,1.9,2.5))); // N=5
 	ASSERTGCOORD(GCoord(0.19,0.019,0.0027), xyz.getOffsetAt(GCoord(1.9,1.9,2.7))); // N=5
-	// Degenerate tetrahedron (note sudden and unfortunate transition in error offset
+	// Degenerate tetrahedron (note sudden and unfortunate transition in offset)
 	ASSERTGCOORD(GCoord(0.136301,0.0136301,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,2.8))); // N=4
 	ASSERTGCOORD(GCoord(0.13773,0.013773,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,2.9))); // N=4
 	ASSERTGCOORD(GCoord(0.139011,0.0139011,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.0))); // N=4
