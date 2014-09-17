@@ -22,7 +22,7 @@ void PointOffsetFilter::setOffsetAt(GCoord pos, GCoord offset) {
     }
 
     PointOffset &po = offsets[pos];
-	po.point = pos;
+    po.point = pos;
     po.offset = offset;
 }
 
@@ -32,8 +32,8 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
         return ORIGIN;
     case 1: 	// A single offset defines uniform translation
         return offsets.begin()->second.offset;
-    case 2: 	// Two offsets define scaling and translation 
-    case 3:		// Three offsets define rotation, scaling and translation 
+    case 2: 	// Two offsets define scaling and translation
+    case 3:		// Three offsets define rotation, scaling and translation
         LOGERROR("Not implemented");
         assert(FALSE);
         break;
@@ -42,7 +42,6 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
     }
 
     // interpolate point cloud using simplex barycentric interpolation
-    GCoord offset(0,0,0);
     double maxDist2 = offsetRadius * offsetRadius;
     vector<PointOffset> neighborhood;
     for (map<GCoord,PointOffset>::iterator ipo=offsets.begin(); ipo!=offsets.end(); ipo++) {
@@ -51,45 +50,75 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
             neighborhood.push_back(ipo->second);
         }
     }
+    cout << "NEIGHBORHOOD:" << neighborhood.size() << endl;
+
+    GCoord offset;
     switch (neighborhood.size()) {
     case 0:		// assume no offset
+        offset = GCoord(0,0,0);
         break;
     case 1:
-        offset = neighborhood[0].offset;
+    case 2:
+    case 3:
+        // weighted average
         break;
-    case 2: {
-        double w1 = pos.distance2(neighborhood[0].point);
-        double w2 = pos.distance2(neighborhood[1].point);
-        double wt = w1+w2;
-        offset = (w1/wt)*neighborhood[0].offset
-                 + (w2/wt)*neighborhood[1].offset;
-        break;
-    }
-    case 3: {
-        double w1 = pos.distance2(neighborhood[0].point);
-        double w2 = pos.distance2(neighborhood[1].point);
-        double w3 = pos.distance2(neighborhood[2].point);
-        double wt = w1+w2+w3;
-        offset = (w1/wt)*neighborhood[0].offset
-                 + (w2/wt)*neighborhood[1].offset
-                 + (w3/wt)*neighborhood[2].offset;
-        break;
-    }
+        /*
+        case 1:
+            offset = neighborhood[0].offset;
+            break;
+        case 2: {
+            double w1 = pos.distance2(neighborhood[0].point);
+            double w2 = pos.distance2(neighborhood[1].point);
+            double wt = w1+w2;
+            offset = (w1/wt)*neighborhood[0].offset
+                     + (w2/wt)*neighborhood[1].offset;
+            break;
+        }
+        case 3: {
+            double w1 = pos.distance2(neighborhood[0].point);
+            double w2 = pos.distance2(neighborhood[1].point);
+            double w3 = pos.distance2(neighborhood[2].point);
+            double wt = w1+w2+w3;
+            offset = (w1/wt)*neighborhood[0].offset
+                     + (w2/wt)*neighborhood[1].offset
+                     + (w3/wt)*neighborhood[2].offset;
+            break;
+        }
+        */
     default:	// just pick the first four as the tetrahedron vertices
     case 4: {
-		GCoord bc = pos.barycentric(
-			neighborhood[0].point, 
-			neighborhood[1].point, 
-			neighborhood[2].point, 
-			neighborhood[3].point);
-		double bc4 = 1 - (bc.x+bc.y+bc.z);
-        offset = bc.x*neighborhood[0].offset
-                 + bc.y*neighborhood[1].offset
-                 + bc.z*neighborhood[2].offset 
-                 + bc4*neighborhood[3].offset;
+        GCoord bc = pos.barycentric(
+                        neighborhood[0].point,
+                        neighborhood[1].point,
+                        neighborhood[2].point,
+                        neighborhood[3].point);
+        if (bc.isValid()) {
+            double bc4 = 1 - (bc.x+bc.y+bc.z);
+            offset = bc.x*neighborhood[0].offset
+                     + bc.y*neighborhood[1].offset
+                     + bc.z*neighborhood[2].offset
+                     + bc4*neighborhood[3].offset;
+		} else {
+			// degenerate (i.e., flat) tetrahedron 
+        }
         break;
-		}
     }
+    }
+
+	if (!offset.isValid()) {
+		cout << "weighted average" << endl;
+		int n = min(4l, (long) neighborhood.size());
+		double w[4];
+		double wt = 0;
+		for (long i=0; i<n; i++) {
+			w[i] = pos.distance2(neighborhood[i].point);
+			wt += w[i];
+		}
+		offset = GCoord(0,0,0);
+		for (long i=0; i<n; i++) {
+			offset = offset + w[i]/wt * neighborhood[i].offset;
+		}
+	}
 
     return offset;
 }

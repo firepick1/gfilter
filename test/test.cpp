@@ -63,6 +63,17 @@ void testG0G1Matcher() {
 	cout << "testG0G1Matcher() PASS" << endl;
 }
 
+
+#define ASSERTGCOORD(e,a) assertGCoord(e,a,__FILE__,__LINE__)
+void assertGCoord(GCoord expected, GCoord actual, const char *fname, long line) {
+	double dist2 = expected.distance2(actual);
+	if (dist2 > 1e-10) {
+		cout << "ASSERTGCOORD expected:" << expected << " actual:" << actual
+		<< " " << fname << "@" << line << endl;
+		assert(false);
+	}
+}
+
 void testPointOffsetFilter() {
 	cout << "testPointOffsetFilter() -------- BEGIN -----" << endl;
     StringSink sink;
@@ -116,12 +127,34 @@ void testPointOffsetFilter() {
 	assert(GCoord(1,1,1) == neighborhood[0].point);
 	assert(GCoord(.1,.01,.001) == neighborhood[0].offset);
 
-	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
-	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
-	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
-	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
-	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
-	//assert(GCoord(1.05,1,1) == xyz.getOffsetAt(GCoord(.5,1,1)));
+	cout << "Testing unit lattice from (1,1,1) to (2,2,2)" << endl;
+	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.01,.001));
+	xyz.setOffsetAt(GCoord(1,1,2), GCoord(.1,.01,.002));
+	xyz.setOffsetAt(GCoord(1,2,1), GCoord(.1,.02,.001));
+	xyz.setOffsetAt(GCoord(1,2,2), GCoord(.1,.02,.002));
+	xyz.setOffsetAt(GCoord(2,1,1), GCoord(.2,.01,.001));
+	xyz.setOffsetAt(GCoord(2,1,2), GCoord(.2,.01,.002));
+	xyz.setOffsetAt(GCoord(2,2,1), GCoord(.2,.02,.001));
+	xyz.setOffsetAt(GCoord(2,2,2), GCoord(.2,.02,.002));
+	ASSERTEQUAL(sqrt(3), xyz.getOffsetRadius());
+	ASSERTGCOORD(GCoord(0.15,0.015,0.0015), xyz.getOffsetAt(GCoord(1.5,1.5,1.5)));
+	ASSERTGCOORD(GCoord(0.1,0.01,0.0015), xyz.getOffsetAt(GCoord(1,1,1.5)));
+	ASSERTGCOORD(GCoord(0,0,0), xyz.getOffsetAt(GCoord(-20,-20,-20)));
+	ASSERTGCOORD(GCoord(0,0,0), xyz.getOffsetAt(GCoord(1,1,-2)));
+	ASSERTGCOORD(GCoord(.2,0.01,.002), xyz.getOffsetAt(GCoord(2,1,2)));
+	ASSERTGCOORD(GCoord(.21,0.021,.0021), xyz.getOffsetAt(GCoord(2.1,2.1,2.1)));
+	ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.getOffsetAt(GCoord(2.9,2.9,2.9))); // N=1
+	ASSERTGCOORD(GCoord(0.19,0.019,0.0021), xyz.getOffsetAt(GCoord(1.9,1.9,2.1))); // N=8
+	ASSERTGCOORD(GCoord(0.19,0.019,0.0025), xyz.getOffsetAt(GCoord(1.9,1.9,2.5))); // N=5
+	ASSERTGCOORD(GCoord(0.19,0.019,0.0027), xyz.getOffsetAt(GCoord(1.9,1.9,2.7))); // N=5
+	// Degenerate tetrahedron (note sudden and unfortunate transition in error offset
+	ASSERTGCOORD(GCoord(0.136301,0.0136301,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,2.8))); // N=4
+	ASSERTGCOORD(GCoord(0.13773,0.013773,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,2.9))); // N=4
+	ASSERTGCOORD(GCoord(0.139011,0.0139011,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.0))); // N=4
+	ASSERTGCOORD(GCoord(0.162207,0.0162207,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.2))); // N=3
+	ASSERTGCOORD(GCoord(0.162704,0.0162704,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.3))); // N=3
+	ASSERTGCOORD(GCoord(0.16313,0.016313,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.4))); // N=3
+	ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.5))); // N=1
 }
 
 void testMat3x3() {

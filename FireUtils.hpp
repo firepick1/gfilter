@@ -37,15 +37,18 @@ assertnonzero(long actual, const char* context) {
 }
 
 inline void
-ASSERTEQUAL(double expected, double actual, const char* context, double tolerance=0) {
+ASSERTEQUAL(double expected, double actual, 
+	const char* context=__FILE__, 
+	double tolerance=0, long line=__LINE__) 
+{
     double diff = expected - actual;
     if (-tolerance <= diff && diff <= tolerance) {
         return;
     }
 
     char buf[255];
-    snprintf(buf, sizeof(buf), "%s expected:%lf actual:%lf tolerance:%lf",
-             context, expected, actual, tolerance);
+    snprintf(buf, sizeof(buf), "%s expected:%lf actual:%lf tolerance:%lf line:%ld",
+             context, expected, actual, tolerance, line);
     LOGERROR(buf);
     std::cout << "***ASSERT FAILED*** " << buf << std::endl;
     assert(false);

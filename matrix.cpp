@@ -18,7 +18,10 @@ GCoord GCoord::barycentric(const GCoord &c1, const GCoord &c2, const GCoord &c3,
 			 c1.y-c4.y, c2.y-c4.y, c3.y-c4.y,
 			 c1.z-c4.z, c2.z-c4.z, c3.z-c4.z);
 	Mat3x3 Tinv;
-	assert(T.inverse(Tinv));
+	if (!T.inverse(Tinv)) {
+		cout << "barycentric failed" << c1 << c2 << c3 << c4 << endl;
+		return GCoord(); // invalid
+	}
 	GCoord cc4 = (*this) - c4;
 	return (Tinv*cc4);
 }
@@ -60,7 +63,7 @@ ostream& gfilter::operator<<(ostream& os, const Mat3x3& that) {
 bool Mat3x3::inverse(Mat3x3 &matInv) {
     double det =det3x3();
 
-    if ( abs(det) < 1e-2 ) {
+    if ( abs(det) < 1e-10 ) {
         matInv.clear();
         return FALSE;
     }

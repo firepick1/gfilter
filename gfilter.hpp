@@ -70,7 +70,7 @@ typedef struct GCoord {
     double x;
     double y;
     double z;
-    inline GCoord() : x(HUGE_VAL), y(HUGE_VAL), z(HUGE_VAL) {};
+    inline GCoord() : x(HUGE_VAL), y(HUGE_VAL), z(HUGE_VAL) {}; // !isValid()
     inline GCoord(double xPos, double yPos, double zPos) : x(xPos), y(yPos), z(zPos) {
         norm2 = xPos*xPos + yPos*yPos + zPos*zPos;
     };
@@ -93,7 +93,7 @@ typedef struct GCoord {
     inline GCoord friend operator-(const GCoord& lhs, const GCoord &rhs) {
         return GCoord(lhs.x-rhs.x,lhs.y-rhs.y,lhs.z-rhs.z);
     }
-    inline bool friend operator==(const GCoord& lhs, const GCoord &rhs) {
+    inline bool friend operator==(const gfilter::GCoord& lhs, const gfilter::GCoord &rhs) {
         return lhs.x==rhs.x && lhs.y==rhs.y && lhs.z == rhs.z;
     }
     inline bool friend operator!=(const GCoord& lhs, const GCoord &rhs) {
@@ -112,10 +112,12 @@ typedef struct GCoord {
         }
         return cmp < 0;
     };
+	inline bool isValid() { return x != HUGE_VAL && y != HUGE_VAL && z != HUGE_VAL; }
     friend GCoord operator*(Mat3x3 &mat, GCoord &c);
     GCoord barycentric(const GCoord &c1, const GCoord &c2, const GCoord &c3, const GCoord &c4);
 } GCoord;
-static struct GCoord ORIGIN(0,0,0);
+
+const GCoord ORIGIN(0,0,0);
 
 typedef struct PointOffset {
     GCoord point;
