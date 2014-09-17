@@ -54,12 +54,13 @@ message("CMAKE_PREFIX_PATH:${CMAKE_PREFIX_PATH}")
 link_directories( ${BUILD_TARGET_DIR} /usr/lib /usr/local/lib )
 
 set(TARGET_LIB_FILES
-  FireLog.cpp 
-  gfilter.cpp
-  delta.cpp
-  xyzfilter.cpp
-  matcher.cpp
-  )
+	FireLog.cpp 
+	gfilter.cpp
+	delta.cpp
+	xyzfilter.cpp
+	matcher.cpp
+	matrix.cpp
+	)
 
 add_library(_gfilter SHARED ${TARGET_LIB_FILES})
 target_link_libraries(_gfilter ${JANSSON_LIB} )
