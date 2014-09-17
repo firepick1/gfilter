@@ -11,6 +11,23 @@ void testGCoord() {
 	assert(GCoord(3,3,3) == GCoord(-1,0,1)+GCoord(4,3,2));
 	assert(GCoord(3,3,3) == GCoord(4,3,2)-GCoord(1,0,-1));
 	assert(GCoord(3,30,300) == 3.0*GCoord(1,10,100));
+
+	GCoord a(0,1,2);
+	GCoord b(0,1,3);
+	GCoord c(0,2,3);
+	GCoord d(-1,0,0);
+
+	assert(GCoord(1,0,0) == a.barycentric(a,b,c,d));
+	assert(GCoord(0,1,0) == b.barycentric(a,b,c,d));
+	assert(GCoord(0,0,1) == c.barycentric(a,b,c,d));
+	assert(GCoord(0,0,0) == d.barycentric(a,b,c,d));
+	GCoord pt1(0,1.5,2.6);
+	double pt1_d2 = GCoord(.4,.1,.5).distance2(pt1.barycentric(a,b,c,d));
+	assert(pt1_d2 < 1e-30);
+	GCoord pt2(-.01,1.5,2.6);
+	cout << pt2.barycentric(a,b,c,d) << endl;
+
+	cout << "testGCoord() PASS" << endl;
 }
 
 void testMatchNumber() {

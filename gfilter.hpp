@@ -6,6 +6,7 @@
 #include <cstring>
 #include <map>
 #include <math.h>
+#include <assert.h>
 #include "jansson.h"
 
 using namespace std;
@@ -37,6 +38,9 @@ typedef class Mat3x3 {
         inline Mat3x3() {
             clear();
         }
+        inline double at(int y, int x) {
+            return mat[y][x];
+        };
         inline void clear() {
             memset( mat, 0, sizeof mat );
         }
@@ -50,7 +54,7 @@ typedef class Mat3x3 {
                    -  ( mat[y1][x2] * mat[y2][x1] );
         }
         inline double det3x3() {
-			return mat[0][0] * det2x2(0,0) - mat[0][1] * det2x2(0,1) + mat[0][2] * det2x2(0,2);
+            return mat[0][0] * det2x2(0,0) - mat[0][1] * det2x2(0,1) + mat[0][2] * det2x2(0,2);
         }
         bool inverse(Mat3x3 &matInv);
         friend bool operator==(const Mat3x3& lhs, const Mat3x3& rhs);
@@ -73,6 +77,7 @@ typedef struct GCoord {
         double dz = z - that.z;
         return dx*dx + dy*dy + dz*dz;
     }
+	GCoord barycentric(const GCoord &c1, const GCoord &c2, const GCoord &c3, const GCoord &c4);
     inline friend ostream& operator<<(ostream& os, const GCoord& value) {
         os << "(" << value.x << "," << value.y << "," << value.z << ")";
         return os;
@@ -105,6 +110,7 @@ typedef struct GCoord {
         }
         return cmp < 0;
     };
+    friend GCoord operator*(Mat3x3 &mat, GCoord &c);
 } GCoord;
 static struct GCoord ORIGIN(0,0,0);
 
