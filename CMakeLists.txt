@@ -57,7 +57,7 @@ set(TARGET_LIB_FILES
 	FireLog.cpp 
 	gfilter.cpp
 	delta.cpp
-	xyzfilter.cpp
+	pointoffset.cpp
 	matcher.cpp
 	matrix.cpp
 	)

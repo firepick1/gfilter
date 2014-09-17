@@ -113,6 +113,27 @@ typedef struct GCoord {
 } GCoord;
 static struct GCoord ORIGIN(0,0,0);
 
+typedef struct PointOffset {
+	GCoord point;
+	GCoord offset;
+    inline friend ostream& operator<<(ostream& os, const PointOffset& value) {
+        os << "(" << value.point.x << "," << value.point.y << "," << value.point.z << ")"
+		<< ":"
+        << "(" << value.offset.x << "," << value.offset.y << "," << value.offset.z << ")"
+		;
+        return os;
+    }
+    inline bool friend operator==(const PointOffset& lhs, const PointOffset &rhs) {
+        return lhs.point==rhs.point && lhs.offset==rhs.offset;
+    }
+    inline bool friend operator!=(const PointOffset& lhs, const PointOffset &rhs) {
+        return !(lhs==rhs);
+    }
+    inline bool friend operator<(const PointOffset& lhs, const PointOffset &rhs) {
+		return lhs.point < rhs.point;
+    };
+} PointOffset, *PointOffsetPtr;
+
 typedef class IGCodeMatcher {
     public:
         /**
@@ -193,17 +214,18 @@ typedef class DeltaFilter:public GFilterBase {
         virtual int writeln (const char *value);
 } DeltaFilter, *DeltaFilterPtr;
 
-typedef class XYZFilter:public GFilterBase {
+typedef class PointOffsetFilter:public GFilterBase {
     private:
         double offsetRadius;
         G0G1Matcher g0g1;
-        map<GCoord, GCoord> offsets;
+        vector<PointOffset> offsets;
+		map<GCoord, PointOffset> offsetMap; // TODO: should use unordered_map
 
     public:
-        XYZFilter (IGFilter & next);
+        PointOffsetFilter (IGFilter & next);
         virtual int writeln (const char *value);
-        GCoord interpolate(GCoord pos);
-        vector<GCoord> offsetNeighborhood(GCoord pos, double radius);
+        GCoord getOffsetAt(GCoord pos);
+        vector<PointOffset> offsetNeighborhood(GCoord pos, double radius);
         void setOffsetAt(GCoord pos, GCoord offset);
         double getOffsetRadius() {
             return offsetRadius;
@@ -211,7 +233,7 @@ typedef class XYZFilter:public GFilterBase {
         void setOffsetRadius(double value) {
             offsetRadius = value;
         }
-} XYZFilter, *XYZFilterPtr;
+} PointOffsetFilter, *PointOffsetFilterPtr;
 
 }				// namespace gfilter
 

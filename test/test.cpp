@@ -62,9 +62,9 @@ void testG0G1Matcher() {
 	cout << "testG0G1Matcher() PASS" << endl;
 }
 
-void testXYZFilter() {
+void testPointOffsetFilter() {
     StringSink sink;
-    XYZFilter xyz(sink);
+    PointOffsetFilter xyz(sink);
 
     xyz.writeln("arbitrary-gcode");
     assert(sink.strings[0] == "arbitrary-gcode");
@@ -73,7 +73,7 @@ void testXYZFilter() {
     xyz.writeln("g1y-12.345");
     assert(sink.strings[2] == "G1Y-12.345000");
 
-    vector<GCoord> neighborhood;
+    vector<PointOffset> neighborhood;
 
 	neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
 	assert(0 == neighborhood.size());
@@ -84,12 +84,13 @@ void testXYZFilter() {
 
 	neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
 	assert(1 == neighborhood.size());
-	assert(GCoord(1,1,1) == neighborhood[0]);
+	assert(GCoord(1,1,1) == neighborhood[0].point);
+	assert(GCoord(.1,.1,.1) == neighborhood[0].offset);
 
-	cout << "DEBUG ==> " << xyz.interpolate(GCoord(1,1,1)) << endl;
-	assert(GCoord(1.1,1.1,1.1) == xyz.interpolate(GCoord(1,1,1)));
-	cout << xyz.interpolate(GCoord(.5,1,1));
-	//assert(GCoord(1.05,1,1) == xyz.interpolate(GCoord(.5,1,1)));
+	cout << "DEBUG ==> " << xyz.getOffsetAt(GCoord(1,1,1)) << endl;
+	assert(GCoord(.1,.1,.1) == xyz.getOffsetAt(GCoord(1,1,1)));
+	cout << xyz.getOffsetAt(GCoord(.5,1,1)) << endl;
+	//assert(GCoord(1.05,1,1) == xyz.getOffsetAt(GCoord(.5,1,1)));
 }
 
 void testMat3x3() {
@@ -114,7 +115,7 @@ int main() {
     testGCoord();
     testMatchNumber();
     testG0G1Matcher();
-    testXYZFilter();
+    testPointOffsetFilter();
 	cout << "ALL TESTS PASS" << endl;
 }
 

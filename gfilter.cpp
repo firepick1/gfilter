@@ -39,6 +39,8 @@ help () {
     cout << "Copyright 2014, Karl Lew" << endl;
     cout << "https://github.com/firepick1/gfilter/wiki" << endl;
     cout << endl;
+	cout << "USAGE:" << endl;
+	cout << "gfilter --point-offset" << endl;
 }
 
 static bool
@@ -55,15 +57,14 @@ parseArgs (int argc, char *argv[], int &jsonIndent) {
         } else if (strcmp ("-h", argv[i]) == 0 || strcmp ("--help", argv[i]) == 0) {
             help ();
             exit (0);
-        } else if (strcmp ("--xyz", argv[i]) == 0) {
-            cout << "create xyz filter" << endl;
-            XYZFilterPtr pXYZ = new XYZFilter (*pHead);
+        } else if (strcmp ("--point-offset", argv[i]) == 0) {
+			LOGINFO("Create PointOffsetFilter");
+            PointOffsetFilterPtr pXYZ = new PointOffsetFilter (*pHead);
             pHead = pXYZ;
             filters.push_back (pXYZ);
         } else if (strcmp ("--delta", argv[i]) == 0) {
-            cout << "create delta filter" << endl;
-            DeltaFilterPtr
-            pDelta = new DeltaFilter (*pHead);
+			LOGINFO("Create DeltaFilter");
+            DeltaFilterPtr pDelta = new DeltaFilter (*pHead);
             pHead = pDelta;
             filters.push_back (pDelta);
         } else if (strcmp ("--warn", argv[i]) == 0) {
