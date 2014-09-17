@@ -61,7 +61,6 @@ typedef class Mat3x3 {
         friend ostream& operator<<(ostream& os, const Mat3x3& that);
 } Mat3x3;
 
-
 typedef struct GCoord {
     double norm2; // square of distance to ORIGIN
     double x;
@@ -77,7 +76,6 @@ typedef struct GCoord {
         double dz = z - that.z;
         return dx*dx + dy*dy + dz*dz;
     }
-	GCoord barycentric(const GCoord &c1, const GCoord &c2, const GCoord &c3, const GCoord &c4);
     inline friend ostream& operator<<(ostream& os, const GCoord& value) {
         os << "(" << value.x << "," << value.y << "," << value.z << ")";
         return os;
@@ -111,6 +109,7 @@ typedef struct GCoord {
         return cmp < 0;
     };
     friend GCoord operator*(Mat3x3 &mat, GCoord &c);
+    GCoord barycentric(const GCoord &c1, const GCoord &c2, const GCoord &c3, const GCoord &c4);
 } GCoord;
 static struct GCoord ORIGIN(0,0,0);
 

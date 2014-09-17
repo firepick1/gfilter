@@ -20,8 +20,7 @@ GCoord GCoord::barycentric(const GCoord &c1, const GCoord &c2, const GCoord &c3,
 	Mat3x3 Tinv;
 	assert(T.inverse(Tinv));
 	GCoord cc4 = (*this) - c4;
-
-	return Tinv*cc4;
+	return (Tinv*cc4);
 }
 
 GCoord gfilter::operator*(Mat3x3 &mat, GCoord &c) {
