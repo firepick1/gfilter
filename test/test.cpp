@@ -1,6 +1,5 @@
 #include <iostream>
 #include "../gfilter.hpp"
-#include <assert.h>
 
 using namespace gfilter;
 
@@ -25,7 +24,9 @@ void testGCoord() {
 	double pt1_d2 = GCoord(.4,.1,.5).distance2(pt1.barycentric(a,b,c,d));
 	assert(pt1_d2 < 1e-30);
 	GCoord pt2(-.01,1.5,2.6);
-	cout << pt2.barycentric(a,b,c,d) << endl;
+	assert(GCoord(0.37,0.11,0.51).distance2(pt2.barycentric(a,b,c,d)) < 1e-10);
+	GCoord pt3(+.01,1.5,2.6);
+	assert(GCoord(0.43,0.09,0.49).distance2(pt3.barycentric(a,b,c,d)) < 1e-10);
 
 	cout << "testGCoord() PASS" << endl;
 }
@@ -63,6 +64,7 @@ void testG0G1Matcher() {
 }
 
 void testPointOffsetFilter() {
+	cout << "testPointOffsetFilter() -------- BEGIN -----" << endl;
     StringSink sink;
     PointOffsetFilter xyz(sink);
 
@@ -83,13 +85,42 @@ void testPointOffsetFilter() {
 	assert(sqrt(3) == xyz.getOffsetRadius());
 
 	neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
-	assert(1 == neighborhood.size());
+	ASSERTEQUAL(1, neighborhood.size(), "neighborhood1");
+	cout << neighborhood[0] << endl;
 	assert(GCoord(1,1,1) == neighborhood[0].point);
 	assert(GCoord(.1,.1,.1) == neighborhood[0].offset);
-
-	cout << "DEBUG ==> " << xyz.getOffsetAt(GCoord(1,1,1)) << endl;
 	assert(GCoord(.1,.1,.1) == xyz.getOffsetAt(GCoord(1,1,1)));
-	cout << xyz.getOffsetAt(GCoord(.5,1,1)) << endl;
+
+	/// Verify that single offset specifies a universal offset
+	assert(GCoord(.1,.1,.1) == xyz.getOffsetAt(GCoord(-100,100,.001)));
+	assert(GCoord(.1,.1,.1) == xyz.getOffsetAt(GCoord(0,0,1)));
+
+	// Test neighborhood calculation distance
+	xyz.setOffsetAt(GCoord(2,2,2), GCoord(-.1,-.1,.1));
+	neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
+	assert(1 == neighborhood.size());
+	assert(GCoord(1,1,1) == neighborhood[0].point);
+	neighborhood = xyz.offsetNeighborhood(GCoord(2,2,2) , 2);
+	assert(2 == neighborhood.size());
+	neighborhood = xyz.offsetNeighborhood(GCoord(3,3,3) , 2);
+	assert(1 == neighborhood.size());
+	assert(GCoord(2,2,2) == neighborhood[0].point);
+
+	cout << "Verify that offsets can be changed..." << endl;
+	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.01,.001));
+	neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
+	for (int i = 0; i < neighborhood.size(); i++) {
+		cout << neighborhood[i] << endl;
+	}
+	assert(1 == neighborhood.size());
+	assert(GCoord(1,1,1) == neighborhood[0].point);
+	assert(GCoord(.1,.01,.001) == neighborhood[0].offset);
+
+	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
+	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
+	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
+	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
+	xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
 	//assert(GCoord(1.05,1,1) == xyz.getOffsetAt(GCoord(.5,1,1)));
 }
 

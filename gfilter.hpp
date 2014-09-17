@@ -6,7 +6,7 @@
 #include <cstring>
 #include <map>
 #include <math.h>
-#include <assert.h>
+#include "FireUtils.hpp"
 #include "jansson.h"
 
 using namespace std;
@@ -24,7 +24,11 @@ typedef class Mat3x3 {
         double mat[3][3];
 
     public:
-        inline Mat3x3(double a,double b,double c,double d,double e,double f,double g,double h,double i) {
+        inline Mat3x3(
+            double a,double b,double c,
+            double d,double e,double f,
+            double g,double h,double i)
+        {
             mat[0][0] = a;
             mat[0][1] = b;
             mat[0][2] = c;
@@ -70,7 +74,7 @@ typedef struct GCoord {
     inline GCoord(double xPos, double yPos, double zPos) : x(xPos), y(yPos), z(zPos) {
         norm2 = xPos*xPos + yPos*yPos + zPos*zPos;
     };
-    inline double distance2(const GCoord &that) {
+    inline double const distance2(const GCoord &that) {
         double dx = x - that.x;
         double dy = y - that.y;
         double dz = z - that.z;
@@ -114,13 +118,13 @@ typedef struct GCoord {
 static struct GCoord ORIGIN(0,0,0);
 
 typedef struct PointOffset {
-	GCoord point;
-	GCoord offset;
+    GCoord point;
+    GCoord offset;
     inline friend ostream& operator<<(ostream& os, const PointOffset& value) {
         os << "(" << value.point.x << "," << value.point.y << "," << value.point.z << ")"
-		<< ":"
-        << "(" << value.offset.x << "," << value.offset.y << "," << value.offset.z << ")"
-		;
+           << ":"
+           << "(" << value.offset.x << "," << value.offset.y << "," << value.offset.z << ")"
+           ;
         return os;
     }
     inline bool friend operator==(const PointOffset& lhs, const PointOffset &rhs) {
@@ -130,7 +134,7 @@ typedef struct PointOffset {
         return !(lhs==rhs);
     }
     inline bool friend operator<(const PointOffset& lhs, const PointOffset &rhs) {
-		return lhs.point < rhs.point;
+        return lhs.point < rhs.point;
     };
 } PointOffset, *PointOffsetPtr;
 
@@ -218,8 +222,7 @@ typedef class PointOffsetFilter:public GFilterBase {
     private:
         double offsetRadius;
         G0G1Matcher g0g1;
-        vector<PointOffset> offsets;
-		map<GCoord, PointOffset> offsetMap; // TODO: should use unordered_map
+        map<GCoord, PointOffset> offsets; // TODO: use PCL octtree or something
 
     public:
         PointOffsetFilter (IGFilter & next);
