@@ -43,7 +43,7 @@ pof.writeln("G0X0Y0Z1");
 The output of this program will be:
 
 <pre>
-G0X0.000000Y0.000000Z1.010000
+G0Z1.01
 </pre>
 
 

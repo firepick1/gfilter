@@ -164,34 +164,48 @@ vector<PointOffset> PointOffsetFilter::offsetNeighborhood(GCoord pos, double rad
 }
 
 int PointOffsetFilter::writeln(const char *value) {
-    int chars = g0g1.match(value);
+    int chars = matcher.match(value);
     char buf[255];
 
     if (chars) {
 		GCoord sourceNew = source;
-        if (g0g1.coord.x != HUGE_VAL) {
-			sourceNew.x = g0g1.coord.x;
+        if (matcher.coord.x != HUGE_VAL) {
+			sourceNew.x = matcher.coord.x;
         }
-        if (g0g1.coord.y != HUGE_VAL) {
-			sourceNew.y = g0g1.coord.y;
+        if (matcher.coord.y != HUGE_VAL) {
+			sourceNew.y = matcher.coord.y;
         }
-        if (g0g1.coord.z != HUGE_VAL) {
-			sourceNew.z = g0g1.coord.z;
+        if (matcher.coord.z != HUGE_VAL) {
+			sourceNew.z = matcher.coord.z;
         }
 		GCoord offset = getOffsetAt(sourceNew);
 		cout << "DEBUG:" << offset << endl;
 		sourceNew = sourceNew + offset;
 		char *s = buf;
 		*s++ = 'G';
-		*s++ = g0g1.code.c_str()[1];
-		if (sourceNew.x != source.x) {
-			s += sprintf(s, "X%g", sourceNew.x);
-		}
-		if (sourceNew.y != source.y ) {
-			s += sprintf(s, "Y%g", sourceNew.y);
-		}
-		if (sourceNew.z != source.z ) {
-			s += sprintf(s, "Z%g", sourceNew.z);
+		*s++ = matcher.code.c_str()[1];
+		if (matcher.code.c_str() == "G28") {
+			*s++ = matcher.code.c_str()[2]; // G28
+			sourceNew = GCoord(0,0,0);
+			if (matcher.coord.x != HUGE_VAL) {
+				*s++ = 'X'; *s++ = '0';
+			}
+			if (matcher.coord.y != HUGE_VAL ) {
+				*s++ = 'Y'; *s++ = '0';
+			}
+			if (matcher.coord.z != HUGE_VAL ) {
+				*s++ = 'Z'; *s++ = '0';
+			}
+		} else {
+			if (sourceNew.x != source.x) {
+				s += sprintf(s, "X%g", sourceNew.x);
+			}
+			if (sourceNew.y != source.y ) {
+				s += sprintf(s, "Y%g", sourceNew.y);
+			}
+			if (sourceNew.z != source.z ) {
+				s += sprintf(s, "Z%g", sourceNew.z);
+			}
 		}
 		*s = 0;
         _next.writeln(buf);

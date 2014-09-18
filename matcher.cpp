@@ -50,7 +50,7 @@ IGCodeMatcher::matchNumber (const char *text) {
 }
 
 int
-G0G1Matcher::match(const char *text) {
+GMoveMatcher::match(const char *text) {
     char *s;
 	char *endPtr;
 	bool loop = TRUE;
@@ -101,6 +101,9 @@ G0G1Matcher::match(const char *text) {
             s++;
             if ((*s == '0' || *s == '1') && !isdigit(s[1])) {
                 code.append (s-1, 2);
+			} else if (*s == '2' && s[1] == '8' && !isdigit(s[2])) {
+                code.append (s-1, 3);
+				s++;
 			} else {
 				s--;
             }

@@ -39,28 +39,31 @@ void testMatchNumber() {
     cout << "testMatchNumber() PASS" << endl;
 }
 
-void testG0G1Matcher() {
-    G0G1Matcher g0g1;
+void testGMoveMatcher() {
+    GMoveMatcher matcher;
 
-    assert(0 == g0g1.match("abc"));
-    assert(2 == g0g1.match("g0"));
-    assert(2 == g0g1.match("g1"));
-    assert(0 == g0g1.match("g2"));
-    assert(0 == g0g1.match("g00"));
-    assert(0 == g0g1.match("g10"));
-    assert(8 == g0g1.match("g1z1y2x3"));
-    assert(g0g1.code == "g1");
-    assert(g0g1.coord.x == 3.0);
-    assert(g0g1.coord.y == 2.0);
-    assert(g0g1.coord.z == 1.0);
+    assert(0 == matcher.match("abc"));
+    assert(2 == matcher.match("g0"));
+    assert(2 == matcher.match("g1"));
+    assert(0 == matcher.match("g2"));
+    assert(0 == matcher.match("g00"));
+    assert(0 == matcher.match("g10"));
+    assert(8 == matcher.match("g1z1y2x3"));
+    ASSERTEQUALS("g1",matcher.code.c_str());
+    assert(matcher.coord.x == 3.0);
+    assert(matcher.coord.y == 2.0);
+    assert(matcher.coord.z == 1.0);
 
-    assert(16 == g0g1.match("g0x-12.345y+6.78"));
-    assert(g0g1.code == "g0");
-    assert(g0g1.coord.x == -12.345);
-    assert(g0g1.coord.y== 6.78);
-    assert(g0g1.coord.z == HUGE_VAL);
+    assert(16 == matcher.match("g0x-12.345y+6.78"));
+    assert(matcher.code == "g0");
+    assert(matcher.coord.x == -12.345);
+    assert(matcher.coord.y== 6.78);
+    assert(matcher.coord.z == HUGE_VAL);
 
-	cout << "testG0G1Matcher() PASS" << endl;
+    ASSERTEQUAL(5, matcher.match("g28X0"));
+    assert(0 == matcher.match("g281X0"));
+
+	cout << "testGMoveMatcher() PASS" << endl;
 }
 
 
@@ -199,7 +202,7 @@ int main() {
 	testMat3x3();
     testGCoord();
     testMatchNumber();
-    testG0G1Matcher();
+    testGMoveMatcher();
     testPointOffsetFilter();
 	cout << "ALL TESTS PASS" << endl;
 }

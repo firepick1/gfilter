@@ -160,12 +160,12 @@ typedef class IGCodeMatcher {
         virtual int match(const char *text) = 0;
 } IGCodeMatcher;
 
-typedef class G0G1Matcher:public IGCodeMatcher {
+typedef class GMoveMatcher:public IGCodeMatcher {
     public:
         string code;
         GCoord coord;
         virtual int match(const char *text);
-} G0G1Matcher;
+} GMoveMatcher;
 
 typedef class IGFilter {
     protected:
@@ -225,7 +225,7 @@ typedef class OStreamSink:public GCodeSink {
 
 typedef class DeltaFilter:public GFilterBase {
     private:
-        G0G1Matcher g0g1;
+        GMoveMatcher matcher;
 
     public:
         DeltaFilter (IGFilter & next);
@@ -236,7 +236,7 @@ typedef class PointOffsetFilter:public GFilterBase {
     private:
 		GCoord source;
         double offsetRadius;
-        G0G1Matcher g0g1;
+        GMoveMatcher matcher;
         map<GCoord, PointOffset> offsets; // TODO: use PCL octtree or something
 
     public:
