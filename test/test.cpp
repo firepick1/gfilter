@@ -3,6 +3,25 @@
 
 using namespace gfilter;
 
+void testJSONConfig() {
+	const char *json = 
+		"{ \"offsets\":[ " \
+		  "{\"point\":[0,0,0], \"offset\":[0,0,0]}, " \
+		  "{\"point\":[0,0,1], \"offset\":[0,0,0.01]}," \
+		  "{\"point\":[0,1,0], \"offset\":[0,0,0.02]}," \
+		  "{\"point\":[0,1,1], \"offset\":[0,0,0.02]} " \
+		  "]}";
+	json_error_t jerr;
+	json_t *config = json_loads(json, 0, &jerr);
+    StringSink sink;
+	PointOffsetFilter pof(sink, config);
+
+	pof.writeln("G0X0Y0Z1 E3F4");
+	ASSERTEQUALS("G0Z1.01E3F4", sink[0].c_str());
+	pof.writeln("G28 Z1 Y0");
+	ASSERTEQUALS("G28Y0Z0", sink[1].c_str());
+}
+
 void testGCoord() {
 	assert(GCoord() == GCoord(HUGE_VAL,HUGE_VAL,HUGE_VAL));
 	assert(GCoord(1,2,3) == GCoord(1.0,2.0,3.0));
@@ -159,25 +178,6 @@ void testPointOffsetFilter() {
 	ASSERTGCOORD(GCoord(0.162704,0.0162704,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.3))); // N=3
 	ASSERTGCOORD(GCoord(0.16313,0.016313,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.4))); // N=3
 	ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.5))); // N=1
-}
-
-void testJSONConfig() {
-	const char *json = 
-		"{ \"offsets\":[ " \
-		  "{\"point\":[0,0,0], \"offset\":[0,0,0]}, " \
-		  "{\"point\":[0,0,1], \"offset\":[0,0,0.01]}," \
-		  "{\"point\":[0,1,0], \"offset\":[0,0,0.02]}," \
-		  "{\"point\":[0,1,1], \"offset\":[0,0,0.02]} " \
-		  "]}";
-	json_error_t jerr;
-	json_t *config = json_loads(json, 0, &jerr);
-    StringSink sink;
-	PointOffsetFilter pof(sink, config);
-
-	pof.writeln("G0X0Y0Z1 E3F4");
-	ASSERTEQUALS("G0Z1.01E3F4", sink[0].c_str());
-	pof.writeln("G28 Z1 Y0");
-	ASSERTEQUALS("G28Y0Z0", sink[1].c_str());
 }
 
 void testMat3x3() {
