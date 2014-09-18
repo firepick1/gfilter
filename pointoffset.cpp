@@ -204,6 +204,7 @@ int PointOffsetFilter::writeln(const char *value) {
 				s += sprintf(s, "Z%g", sourceNew.z);
 			}
 		}
+		s += snprintf(s, sizeof(buf)-(s-buf), "%s", value+chars);
 		*s = 0;
         _next.writeln(buf);
 		source = sourceNew;
