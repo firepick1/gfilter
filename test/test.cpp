@@ -1,4 +1,3 @@
-#include <iostream>
 #include "../gfilter.hpp"
 
 using namespace gfilter;
