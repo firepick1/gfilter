@@ -14,3 +14,4 @@ jannson jansson
 Makefile
 msvc/*
 target
+Pipeline.cpp
