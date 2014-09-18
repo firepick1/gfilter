@@ -176,6 +176,8 @@ void testJSONConfig() {
 
 	pof.writeln("G0X0Y0Z1");
 	ASSERTEQUALS("G0Z1.01", sink[0].c_str());
+	pof.writeln("G28 Z1 Y0");
+	ASSERTEQUALS("G28Y0Z0", sink[1].c_str());
 }
 
 void testMat3x3() {

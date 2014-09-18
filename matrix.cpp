@@ -19,7 +19,11 @@ GCoord GCoord::barycentric(const GCoord &c1, const GCoord &c2, const GCoord &c3,
 			 c1.z-c4.z, c2.z-c4.z, c3.z-c4.z);
 	Mat3x3 Tinv;
 	if (!T.inverse(Tinv)) {
-		cout << "barycentric failed" << c1 << c2 << c3 << c4 << endl;
+		LOGDEBUG4("GCoord::barycentric failed %s %s %s %s",
+			c1.toString().c_str(), 
+			c2.toString().c_str(),
+			c3.toString().c_str(),
+			c4.toString().c_str());
 		return GCoord(); // invalid
 	}
 	GCoord cc4 = (*this) - c4;

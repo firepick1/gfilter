@@ -84,7 +84,7 @@ typedef struct GCoord {
         os << "(" << value.x << "," << value.y << "," << value.z << ")";
         return os;
     }
-	inline string toString() {
+	inline string toString() const {
 		char buf[255];
 		snprintf(buf, sizeof(buf), "(%g,%g,%g)",x,y,z);
 		return string(buf);

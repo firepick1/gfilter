@@ -137,10 +137,8 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
 				offset = neighborhood[i].offset;
 			}
 		}
-		cout << "DEBUG: " << offset << endl;
 		if (wt != 0) {
 			for (long i=0; i<n; i++) {
-			cout << "DEBUG: " << i << " "<< offset << endl;
 				offset = offset + w[i]/wt * neighborhood[i].offset;
 			}
 		}
@@ -179,13 +177,12 @@ int PointOffsetFilter::writeln(const char *value) {
 			sourceNew.z = matcher.coord.z;
         }
 		GCoord offset = getOffsetAt(sourceNew);
-		cout << "DEBUG:" << offset << endl;
 		sourceNew = sourceNew + offset;
 		char *s = buf;
 		*s++ = 'G';
 		*s++ = matcher.code.c_str()[1];
-		if (matcher.code.c_str() == "G28") {
-			*s++ = matcher.code.c_str()[2]; // G28
+		if (matcher.code.c_str()[1] == '2' && matcher.code.c_str()[2] == '8') {
+			*s++ = '8';
 			sourceNew = GCoord(0,0,0);
 			if (matcher.coord.x != HUGE_VAL) {
 				*s++ = 'X'; *s++ = '0';
