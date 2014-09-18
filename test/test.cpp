@@ -82,9 +82,9 @@ void testPointOffsetFilter() {
     xyz.writeln("arbitrary-gcode");
     assert(sink.strings[0] == "arbitrary-gcode");
     xyz.writeln("g0x1y2z3");
-    assert(sink.strings[1] == "G0X1.000000Y2.000000Z3.000000");
+    ASSERTEQUALS("G0X1Y2Z3", sink.strings[1].c_str());
     xyz.writeln("g1y-12.345");
-    assert(sink.strings[2] == "G1Y-12.345000");
+    ASSERTEQUALS("G1Y-12.345", sink.strings[2].c_str());
 
     vector<PointOffset> neighborhood;
 
@@ -96,7 +96,7 @@ void testPointOffsetFilter() {
 	assert(sqrt(3) == xyz.getOffsetRadius());
 
 	neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
-	ASSERTEQUAL(1, neighborhood.size(), "neighborhood1");
+	ASSERTEQUAL(1, neighborhood.size());
 	cout << neighborhood[0] << endl;
 	assert(GCoord(1,1,1) == neighborhood[0].point);
 	assert(GCoord(.1,.1,.1) == neighborhood[0].offset);
@@ -113,8 +113,7 @@ void testPointOffsetFilter() {
 	assert(GCoord(1,1,1) == neighborhood[0].point);
 	neighborhood = xyz.offsetNeighborhood(GCoord(2,2,2) , 2);
 	assert(2 == neighborhood.size());
-	neighborhood = xyz.offsetNeighborhood(GCoord(3,3,3) , 2);
-	assert(1 == neighborhood.size());
+	neighborhood = xyz.offsetNeighborhood(GCoord(3,3,3) , 2); assert(1 == neighborhood.size());
 	assert(GCoord(2,2,2) == neighborhood[0].point);
 
 	cout << "Verify that offsets can be changed..." << endl;
@@ -159,6 +158,23 @@ void testPointOffsetFilter() {
 	ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.5))); // N=1
 }
 
+void testJSONConfig() {
+	const char *json = 
+		"{ \"offsets\":[ " \
+		  "{\"point\":[0,0,0], \"offset\":[0,0,0]}, " \
+		  "{\"point\":[0,0,1], \"offset\":[0,0,0.01]}," \
+		  "{\"point\":[0,1,0], \"offset\":[0,0,0.02]}," \
+		  "{\"point\":[0,1,1], \"offset\":[0,0,0.02]} " \
+		  "]}";
+	json_error_t jerr;
+	json_t *config = json_loads(json, 0, &jerr);
+    StringSink sink;
+	PointOffsetFilter pof(sink, config);
+
+	pof.writeln("G0X0Y0Z1");
+	ASSERTEQUALS("G0Z1.01", sink[0].c_str());
+}
+
 void testMat3x3() {
 	Mat3x3 mat( 1, 2, 3, 
 				0, 1, 4, 
@@ -177,6 +193,9 @@ void testMat3x3() {
 }
 
 int main() {
+	firelog_init("test/test.log", FIRELOG_DEBUG);
+
+	testJSONConfig();
 	testMat3x3();
     testGCoord();
     testMatchNumber();

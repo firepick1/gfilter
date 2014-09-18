@@ -84,6 +84,11 @@ typedef struct GCoord {
         os << "(" << value.x << "," << value.y << "," << value.z << ")";
         return os;
     }
+	inline string toString() {
+		char buf[255];
+		snprintf(buf, sizeof(buf), "(%g,%g,%g)",x,y,z);
+		return string(buf);
+	}
     inline GCoord friend operator*(double scalar, const GCoord &rhs) {
         return GCoord(scalar*rhs.x,scalar*rhs.y,scalar*rhs.z);
     }
@@ -190,26 +195,33 @@ typedef class GFilterBase:public IGFilter {
         };
 } GFilterBase;
 
-typedef class StringSink:public IGFilter {
+/**
+ * The ultimate recipient of all the GCode
+ */
+typedef class GCodeSink:public IGFilter {
+} GCodeSink;
+
+typedef class StringSink:public GCodeSink {
     public:
         vector<string> strings;
         virtual int writeln (const char *value);
+		string operator[](int index){ return strings[index]; }
 } StringSink;
 
-typedef class OStreamFilter:public IGFilter {
+typedef class OStreamSink:public GCodeSink {
     private:
         ostream * pos;
 
     public:
-        OStreamFilter (ostream & os) {
+        OStreamSink (ostream & os) {
             pos = &os;
         };
-        ~OStreamFilter () {
+        ~OStreamSink () {
             pos->flush ();
         };
 
         virtual int writeln (const char *value);
-} OStreamFilter;
+} OStreamSink;
 
 typedef class DeltaFilter:public GFilterBase {
     private:
@@ -222,12 +234,14 @@ typedef class DeltaFilter:public GFilterBase {
 
 typedef class PointOffsetFilter:public GFilterBase {
     private:
+		GCoord source;
         double offsetRadius;
         G0G1Matcher g0g1;
         map<GCoord, PointOffset> offsets; // TODO: use PCL octtree or something
 
     public:
-        PointOffsetFilter (IGFilter & next);
+        PointOffsetFilter (IGFilter & next, json_t* config=NULL);
+		int configure(json_t *config);
         virtual int writeln (const char *value);
         GCoord getOffsetAt(GCoord pos);
         vector<PointOffset> offsetNeighborhood(GCoord pos, double radius);

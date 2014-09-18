@@ -32,14 +32,14 @@ assertnonzero(long actual, const char* context) {
     char buf[255];
     snprintf(buf, sizeof(buf), "%s expected non-zero", context);
     LOGERROR(buf);
-    std::cout << "***ASSERT FAILED*** " << buf << std::endl;
+    std::cerr << "***ASSERT FAILED*** " << buf << std::endl;
     assert(false);
 }
 
+#define ASSERTEQUAL(e,a) assertEqual((double)e,(double)a,0,__FILE__,__LINE__)
+#define ASSERTEQUALT(e,a,t) assertEqual(e,a,t,__FILE__,__LINE__)
 inline void
-ASSERTEQUAL(double expected, double actual, 
-	const char* context=__FILE__, 
-	double tolerance=0, long line=__LINE__) 
+assertEqual(double expected, double actual, double tolerance, const char* context, long line)
 {
     double diff = expected - actual;
     if (-tolerance <= diff && diff <= tolerance) {
@@ -50,24 +50,25 @@ ASSERTEQUAL(double expected, double actual,
     snprintf(buf, sizeof(buf), "%s expected:%lf actual:%lf tolerance:%lf line:%ld",
              context, expected, actual, tolerance, line);
     LOGERROR(buf);
-    std::cout << "***ASSERT FAILED*** " << buf << std::endl;
+    std::cerr << "***ASSERT FAILED*** " << buf << std::endl;
     assert(false);
 }
 
+#define ASSERTEQUALS(e,a) assertEqual(e,a,__FILE__,__LINE__)
 inline void
-ASSERTEQUAL(const char* expected, const char* actual, const char* context) {
+assertEqual(const char* expected, const char* actual, const char* context, int line) {
     if (actual && strcmp(expected, actual)==0) {
         return;
     }
 
     char buf[255];
     if (actual) {
-        snprintf(buf, sizeof(buf), "%s expected:%s actual:%s", context, expected, actual);
+        snprintf(buf, sizeof(buf), "%s@%d expected:%s actual:%s", context, line, expected, actual);
     } else {
-        snprintf(buf, sizeof(buf), "%s expected:%s actual:NULLs", context, expected);
+        snprintf(buf, sizeof(buf), "%s@%d expected:%s actual:NULLs", context, line, expected);
     }
     LOGERROR(buf);
-    std::cout << "***ASSERT FAILED*** " << buf << std::endl;
+    std::cerr << "***ASSERT FAILED*** " << buf << std::endl;
     assert(false);
 }
 

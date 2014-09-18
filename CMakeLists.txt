@@ -17,6 +17,27 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 SET(COMPILE_DEFINITIONS -Werror)
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FILE_OFFSET_BITS=64")
 
+IF(WIN32)
+  MESSAGE(STATUS "Detecting WINDOWS build")
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
+  # By default, do not warn when built on machines using only VS Express:
+  IF(NOT DEFINED CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS)
+    SET(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS ON)
+  ENDIF() 
+  SET(JANSSON_DIR "${CMAKE_SOURCE_DIR}/jansson/msvc" CACHE STRING "Jansson directory") 
+  SET(JANSSON_INCLUDE_DIRS "${JANSSON_DIR}/include")
+  SET(JANSSON_LIB "${JANSSON_DIR}/lib/Debug/jansson_d.lib")
+  SET(JANSSON_DLL "${JANSSON_DIR}/bin/Debug/jansson_d.dll")
+  MESSAGE(STATUS "JANSSON_DLL:${JANSSON_DLL}")
+  MESSAGE(STATUS "JANSSON_LIB:${JANSSON_LIB}")
+ELSE(WIN32)
+  MESSAGE(STATUS "Detecting LINUX build")
+  SET(JANSSON_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/jannson/src")
+  SET(JANSSON_LIB "libjansson.so")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -g -Wno-format-extra-args")
+  SET(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -g")
+ENDIF(WIN32)
+
 get_property(dirs DIRECTORY . PROPERTY INCLUDE_DIRECTORIES)
 message("INCLUDE_DIRECTORIES:${dirs}")
 
@@ -60,6 +81,7 @@ set(TARGET_LIB_FILES
 	pointoffset.cpp
 	matcher.cpp
 	matrix.cpp
+	jo_util.cpp
 	)
 
 add_library(_gfilter SHARED ${TARGET_LIB_FILES})
@@ -76,7 +98,7 @@ target_link_libraries(gfilter ${JANSSON_LIB} ${TARGET_LIB} )
 add_executable(test 
   test/test.cpp)
 add_dependencies(test _gfilter)
-target_link_libraries(test ${TARGET_LIB} )
+target_link_libraries(test ${JANSSON_LIB} ${TARGET_LIB} )
 
 #
 # Installation preparation.

@@ -27,14 +27,14 @@ PointOffsetFilter pof(outfilter, configJSON);
 pof.writeln("G0X0Y0Z1");
 </pre>
 
-The `outFilter` is simply the next filter in the pipeline. A common filter is OStreamFilter,
+The `outFilter` is simply the next filter in the pipeline. A common filter is OStreamSink,
 which sends the output to an `ostream`. In this example, we're sending the transformed
 GCode to `cout`:
 
 <pre>
 #include "gfilter.hpp"
 json_t *configJSON = ...; // JSON configuration for PointOffsetFilter
-OStreamFilter outFilter(cout);
+OStreamSink outFilter(cout);
 PointOffsetFilter pof(outFilter, configJSON);
 pof.writeln("G0X0Y0Z1");
 </pre>

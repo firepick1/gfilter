@@ -13,9 +13,9 @@
 using namespace std;
 using namespace gfilter;
 
-//////////////////// OStreamFilter ////////////////
+//////////////////// OStreamSink ////////////////
 int
-OStreamFilter::writeln (const char *value) {
+OStreamSink::writeln (const char *value) {
     (*pos) << value << endl;
     return 0;
 };
@@ -28,7 +28,7 @@ StringSink::writeln (const char *value) {
 };
 
 ////////////////// main ////////////////////////
-static OStreamFilter osf (cout);
+static OStreamSink osf (cout);
 static IGFilter * pHead = &osf;
 static vector<IGFilterPtr> filters;
 
