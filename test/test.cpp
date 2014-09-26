@@ -1,4 +1,5 @@
 #include "../gfilter.hpp"
+#include <errno.h>
 
 using namespace gfilter;
 
@@ -197,8 +198,56 @@ void testMat3x3() {
     cout << "testMat3x3() PASS" << endl;
 }
 
+string loadFile(const char *path) {
+    LOGINFO1("loadFile(%s)", path);
+    FILE *file = fopen(path, "r");
+    if (file == 0) {
+        LOGERROR1("loadFile() fopen(%s) failed", path);
+        ASSERTZERO(-ENOENT);
+    }
+    fseek(file, 0, SEEK_END);
+    size_t length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+	char * pData = (char *) malloc(length+1);
+    assert(pData);
+    LOGINFO2("loadFile(%s) fread(%ld)", path, (long)length);
+    size_t bytesRead = fread(pData, 1, length, file);
+    if (bytesRead != length) {
+        LOGERROR2("loadFile(), fread failed expected:%ldB actual%ldB", length, bytesRead);
+        exit(-EIO);
+    }
+    LOGINFO2("loadFile(%s) loaded %ldB", path, (long) bytesRead);
+    fclose(file);
+	pData[length] = 0;
+	string result(pData);
+	free(pData);
+    return result;
+}
+
+void testCenter() {
+	cout << "testCenter() BEGIN -------" << endl;
+
+	string json = loadFile("test/fiduciary.json");
+    json_error_t jerr;
+    json_t *config = json_loads(json.c_str(), 0, &jerr);
+    StringSink sink;
+    PointOffsetFilter pof(sink, config);
+	pof.setOffsetRadius(40);
+
+	int line=0;
+	const char *gcode;
+
+	gcode = "G0X0Y0Z0";
+	pof.writeln(gcode);
+	cout << gcode << " -> " << sink[line] << endl;
+	ASSERTEQUALS("G0X13.3419Y-0.541237", sink[line].c_str());
+	line++;
+
+	cout << "testCenter() PASS" << endl;
+}
+
 int main() {
-    firelog_init("test/test.log", FIRELOG_DEBUG);
+    firelog_init("target/test.log", FIRELOG_DEBUG);
 
     testJSONConfig();
     testMat3x3();
@@ -206,6 +255,8 @@ int main() {
     testMatchNumber();
     testGMoveMatcher();
     testPointOffsetFilter();
+	testCenter();
+
     cout << "ALL TESTS PASS" << endl;
 }
 

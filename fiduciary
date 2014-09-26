@@ -1,0 +1,35 @@
+#! /bin/bash
+
+function fiduciary() {
+	JSON=`firesight -Dtemplate=test/wbbw32.png -p test/match-fiducial.json -i test/X$1Y$2Z$3.jpg -ji 0`
+	DX=`echo $JSON | grep -o -E '"x":[-0-9.]*' | grep -o -E "[-0-9.]*"`
+	DY=`echo $JSON | grep -o -E '"y":[-0-9.]*' | grep -o -E "[-0-9.]*"`
+	if [ "$DX" != "" ]; then
+		CX=`bc <<< "scale=3;$DX - 200"`
+		CY=`bc <<< "scale=3;$DY - 200"`
+		echo "{\"point\":[$CX,$CY,$3], \"offset\":[$1,$2,$3]},"
+	fi
+}
+
+Z=0
+echo "{\"offsets\":["
+for X in `seq -20 5 20` 
+do
+	for Y in `seq -20 5 20`
+	do
+		fiduciary $X $Y $Z
+	done
+done
+
+for Z in `seq -1 2 1`
+do
+	for X in `seq -17.5 5 17.5` 
+	do
+		for Y in `seq -17.5 5 17.5`
+		do
+			fiduciary $X $Y $Z
+		done
+	done
+done
+
+echo "false]}"
