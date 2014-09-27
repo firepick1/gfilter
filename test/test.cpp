@@ -7,9 +7,9 @@ void testJSONConfig() {
     const char *json =
         "{ \"offsets\":[ " \
         "{\"point\":[0,0,0], \"offset\":[0,0,0]}, " \
-        "{\"point\":[0,0,1], \"offset\":[0,0,0.01]}," \
-        "{\"point\":[0,1,0], \"offset\":[0,0,0.02]}," \
-        "{\"point\":[0,1,1], \"offset\":[0,0,0.02]} " \
+        "{\"point\":[0,0,1], \"offset\":[0,0,1.01]}," \
+        "{\"point\":[0,1,0], \"offset\":[0,1,0.02]}," \
+        "{\"point\":[0,1,1], \"offset\":[0,1,1.02]} " \
         "]}";
     json_error_t jerr;
     json_t *config = json_loads(json, 0, &jerr);
@@ -17,9 +17,9 @@ void testJSONConfig() {
     PointOffsetFilter pof(sink, config);
 
     pof.writeln("G0X0Y0Z1 E3F4");
-    ASSERTEQUALS("G0Z1.01E3F4", sink[0].c_str());
+    ASSERTEQUALS("G0X0Y0Z1.01E3F4", sink[0].c_str());
     pof.writeln("G28 Z1 Y0");
-    ASSERTEQUALS("G28Y0Z0", sink[1].c_str());
+    ASSERTEQUALS("G28X0Y0Z0", sink[1].c_str());
 }
 
 void testGCoord() {
@@ -93,7 +93,9 @@ void assertGCoord(GCoord expected, GCoord actual, const char *fname, long line) 
         cout << "ASSERTGCOORD expected:" << expected << " actual:" << actual
              << " " << fname << "@" << line << endl;
         assert(false);
-    }
+    } else {
+		cout << "ASSERTGCOORD(" << actual.toString() << ") OK" << endl;
+	}
 }
 
 void testPointOffsetFilter() {
@@ -106,7 +108,7 @@ void testPointOffsetFilter() {
     xyz.writeln("g0x1y2z3");
     ASSERTEQUALS("G0X1Y2Z3", sink.strings[1].c_str());
     xyz.writeln("g1y-12.345");
-    ASSERTEQUALS("G1Y-12.345", sink.strings[2].c_str());
+    ASSERTEQUALS("G1X1Y-12.345Z3", sink.strings[2].c_str());
 
     vector<PointOffset> neighborhood;
 
@@ -122,11 +124,11 @@ void testPointOffsetFilter() {
     cout << neighborhood[0] << endl;
     assert(GCoord(1,1,1) == neighborhood[0].point);
     assert(GCoord(.1,.1,.1) == neighborhood[0].offset);
-    assert(GCoord(.1,.1,.1) == xyz.getOffsetAt(GCoord(1,1,1)));
+    assert(GCoord(.1,.1,.1) == xyz.interpolate(GCoord(1,1,1)));
 
     /// Verify that single offset specifies a universal offset
-    assert(GCoord(.1,.1,.1) == xyz.getOffsetAt(GCoord(-100,100,.001)));
-    assert(GCoord(.1,.1,.1) == xyz.getOffsetAt(GCoord(0,0,1)));
+    assert(GCoord(.1,.1,.1) == xyz.interpolate(GCoord(-100,100,.001)));
+    assert(GCoord(.1,.1,.1) == xyz.interpolate(GCoord(0,0,1)));
 
     // Test neighborhood calculation distance
     xyz.setOffsetAt(GCoord(2,2,2), GCoord(-.1,-.1,.1));
@@ -159,26 +161,27 @@ void testPointOffsetFilter() {
     xyz.setOffsetAt(GCoord(2,2,1), GCoord(.2,.02,.001));
     xyz.setOffsetAt(GCoord(2,2,2), GCoord(.2,.02,.002));
     ASSERTEQUAL(sqrt(3), xyz.getOffsetRadius());
-    ASSERTGCOORD(GCoord(0.15,0.015,0.0015), xyz.getOffsetAt(GCoord(1.5,1.5,1.5)));
-    ASSERTGCOORD(GCoord(0.1,0.01,0.0015), xyz.getOffsetAt(GCoord(1,1,1.5)));
-    ASSERTGCOORD(GCoord(0,0,0), xyz.getOffsetAt(GCoord(-20,-20,-20)));
-    ASSERTGCOORD(GCoord(0,0,0), xyz.getOffsetAt(GCoord(1,1,-2)));
-    ASSERTGCOORD(GCoord(.2,0.01,.002), xyz.getOffsetAt(GCoord(2,1,2)));
-    ASSERTGCOORD(GCoord(.21,0.021,.0021), xyz.getOffsetAt(GCoord(2.1,2.1,2.1)));
-    ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.getOffsetAt(GCoord(2.9,2.9,2.9))); // N=1
+    ASSERTGCOORD(GCoord(0.15,0.015,0.0015), xyz.interpolate(GCoord(1.5,1.5,1.5)));
+    ASSERTGCOORD(GCoord(0.1,0.01,0.0015), xyz.interpolate(GCoord(1,1,1.5)));
+    ASSERTGCOORD(GCoord(0,0,0), xyz.interpolate(GCoord(-20,-20,-20)));
+    ASSERTGCOORD(GCoord(0,0,0), xyz.interpolate(GCoord(1,1,-2)));
+    ASSERTGCOORD(GCoord(.2,0.01,.002), xyz.interpolate(GCoord(2,1,2)));
+    ASSERTGCOORD(GCoord(.21,0.021,.0021), xyz.interpolate(GCoord(2.1,2.1,2.1)));
+    ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.interpolate(GCoord(2.9,2.9,2.9))); // N=1
 
     cout << "Testing neighborhood starvation with points exterior to lattice" << endl;
-    ASSERTGCOORD(GCoord(0.19,0.019,0.0021), xyz.getOffsetAt(GCoord(1.9,1.9,2.1))); // N=8
-    ASSERTGCOORD(GCoord(0.19,0.019,0.0025), xyz.getOffsetAt(GCoord(1.9,1.9,2.5))); // N=5
-    ASSERTGCOORD(GCoord(0.19,0.019,0.0027), xyz.getOffsetAt(GCoord(1.9,1.9,2.7))); // N=5
+    ASSERTGCOORD(GCoord(0.19,0.019,0.0021), xyz.interpolate(GCoord(1.9,1.9,2.1))); // N=8
     // Degenerate tetrahedron (note sudden and unfortunate transition in offset)
-    ASSERTGCOORD(GCoord(0.136301,0.0136301,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,2.8))); // N=4
-    ASSERTGCOORD(GCoord(0.13773,0.013773,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,2.9))); // N=4
-    ASSERTGCOORD(GCoord(0.139011,0.0139011,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.0))); // N=4
-    ASSERTGCOORD(GCoord(0.162207,0.0162207,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.2))); // N=3
-    ASSERTGCOORD(GCoord(0.162704,0.0162704,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.3))); // N=3
-    ASSERTGCOORD(GCoord(0.16313,0.016313,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.4))); // N=3
-    ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.getOffsetAt(GCoord(1.9,1.9,3.5))); // N=1
+    ASSERTGCOORD(GCoord(0.165677,0.0165677,0.002), xyz.interpolate(GCoord(1.9,1.9,2.4))); // N=7
+    ASSERTGCOORD(GCoord(0.163,0.0163,0.002), xyz.interpolate(GCoord(1.9,1.9,2.5))); // N=5
+    ASSERTGCOORD(GCoord(0.159278,0.0159278,0.002), xyz.interpolate(GCoord(1.9,1.9,2.7))); // N=5
+    ASSERTGCOORD(GCoord(0.157965,0.0157965,0.002), xyz.interpolate(GCoord(1.9,1.9,2.8))); // N=4
+    ASSERTGCOORD(GCoord(0.156899,0.0156899,0.002), xyz.interpolate(GCoord(1.9,1.9,2.9))); // N=4
+    ASSERTGCOORD(GCoord(0.156024,0.0156024,0.002), xyz.interpolate(GCoord(1.9,1.9,3.0))); // N=4
+    ASSERTGCOORD(GCoord(0.169175,0.0169175,0.002), xyz.interpolate(GCoord(1.9,1.9,3.2))); // N=3
+    ASSERTGCOORD(GCoord(0.168862,0.0168862,0.002), xyz.interpolate(GCoord(1.9,1.9,3.3))); // N=3
+    ASSERTGCOORD(GCoord(0.168602,0.0168602,0.002), xyz.interpolate(GCoord(1.9,1.9,3.4))); // N=3
+    ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.interpolate(GCoord(1.9,1.9,3.5))); // N=1
 }
 
 void testMat3x3() {
@@ -227,12 +230,12 @@ string loadFile(const char *path) {
 void testCenter() {
 	cout << "testCenter() BEGIN -------" << endl;
 
-	string json = loadFile("test/fiduciary.json");
+	string json = loadFile("test/fiducial.json");
     json_error_t jerr;
     json_t *config = json_loads(json.c_str(), 0, &jerr);
     StringSink sink;
     PointOffsetFilter pof(sink, config);
-	pof.setOffsetRadius(40);
+	pof.setOffsetRadius(24);// depends on grid sampling distance and pixels/mm	
 
 	int line=0;
 	const char *gcode;
@@ -240,14 +243,20 @@ void testCenter() {
 	gcode = "G0X0Y0Z0";
 	pof.writeln(gcode);
 	cout << gcode << " -> " << sink[line] << endl;
-	ASSERTEQUALS("G0X13.3419Y-0.541237", sink[line].c_str());
+	ASSERTEQUALS("G0X13.3419Y-0.541237Z0", sink[line].c_str());
+	line++;
+
+	gcode = "G0 X11 Y-112 Z0";
+	pof.writeln(gcode);
+	cout << gcode << " -> " << sink[line] << endl;
+	ASSERTEQUALS("G0X0Y10Z0", sink[line].c_str());
 	line++;
 
 	cout << "testCenter() PASS" << endl;
 }
 
 int main() {
-    firelog_init("target/test.log", FIRELOG_DEBUG);
+    firelog_init("target/test.log", FIRELOG_TRACE);
 
     testJSONConfig();
     testMat3x3();

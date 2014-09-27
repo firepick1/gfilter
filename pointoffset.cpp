@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cfloat>
 #include <math.h>
 #include "FireLog.h"
 #include "gfilter.hpp"
@@ -15,7 +16,7 @@ using namespace gfilter;
 PointOffsetFilter::PointOffsetFilter(IGFilter &next, json_t *pConfig) : GFilterBase(next) {
     _name = "PointOffsetFilter";
     offsetRadius = 0;
-	source = GCoord(0,0,0);
+	domain = GCoord(0,0,0);
 	if (pConfig) {
 		LOGINFO("PointOffsetFilter(JSON)");
 		ASSERTZERO(configure(pConfig));
@@ -67,10 +68,10 @@ void PointOffsetFilter::setOffsetAt(GCoord pos, GCoord offset) {
     po.offset = offset;
 }
 
-GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
+GCoord PointOffsetFilter::interpolate(GCoord pos) {
     switch (offsets.size()) {
     case 0: 	// No transformation
-        return ORIGIN;
+        return pos;
     case 1: 	// A single offset defines uniform translation
         return offsets.begin()->second.offset;
     case 2: 	// Two offsets define scaling and translation
@@ -84,17 +85,18 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
 
     // interpolate point cloud using simplex barycentric interpolation
     double maxDist2 = offsetRadius * offsetRadius;
-    vector<PointOffset> neighborhood;
-    for (map<GCoord,PointOffset>::iterator ipo=offsets.begin(); ipo!=offsets.end(); ipo++) {
-        double dist2 = pos.distance2(ipo->second.point);
-        if (dist2 < maxDist2) {
-            neighborhood.push_back(ipo->second);
-        }
-    }
-	LOGDEBUG2("getOffsetAt(%s) neighborhood:%d", 
+    vector<PointOffset> neighborhood = offsetNeighborhood(pos, offsetRadius);
+	LOGDEBUG2("interpolate(%s) neighborhood:%d", 
 		pos.toString().c_str(), (int) neighborhood.size());
 
     GCoord offset;
+	int n = neighborhood.size();
+	if (logLevel >= FIRELOG_TRACE) {
+		for (int i=0; i < n; i++) {
+			LOGTRACE3("neighborhood[%d]: %s %g", i, neighborhood[i].toString().c_str(), 
+				pos.distance2(neighborhood[i].point));
+		}
+	}
     switch (neighborhood.size()) {
     case 0:		// assume no offset
         offset = GCoord(0,0,0);
@@ -104,7 +106,7 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
     case 3:
         // weighted average
         break;
-    default:	// just pick the first four as the tetrahedron vertices
+    default:	// the first four are the closest and are used as the tetrahedron vertices
     case 4: {
         GCoord bc = pos.barycentric(
                         neighborhood[0].point,
@@ -117,6 +119,9 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
                      + bc.y*neighborhood[1].offset
                      + bc.z*neighborhood[2].offset
                      + bc4*neighborhood[3].offset;
+			offset.trunc(5);
+			LOGTRACE4("barycentric(%g,%g,%g,%g)", bc.x, bc.y, bc.z, bc4);
+			LOGTRACE3("barycentric => (%g,%g,%g)", offset.x,offset.y,offset.z);
 		} else {
 			LOGDEBUG("degenerate tetrahedron");
         }
@@ -130,18 +135,19 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
 		double w[4];
 		double wt = 0;
 		offset = GCoord(0,0,0);
+#define WEIGHTING_DISTANCE 0.001 /* All points within this distance are treated the same */
 		for (long i=0; i<n; i++) {
-			w[i] = pos.distance2(neighborhood[i].point);
+			double d = pos.distance2(neighborhood[i].point);
+			d = max(d, WEIGHTING_DISTANCE*WEIGHTING_DISTANCE);
+			w[i] = 1/sqrt(d);
 			wt += w[i];
-			if (w[i] == 0) {
-				offset = neighborhood[i].offset;
-			}
 		}
 		if (wt != 0) {
 			for (long i=0; i<n; i++) {
 				offset = offset + w[i]/wt * neighborhood[i].offset;
 			}
 		}
+		LOGTRACE3("weightd => (%g,%g,%g)", offset.x,offset.y,offset.z);
 	}
 
     return offset;
@@ -150,11 +156,38 @@ GCoord PointOffsetFilter::getOffsetAt(GCoord pos) {
 vector<PointOffset> PointOffsetFilter::offsetNeighborhood(GCoord pos, double radius) {
     double maxDist2 = radius*radius;
     vector<PointOffset> neighborhood;
+	double dist[4];	// sort top 4 for barycentric tetrahedron
+	for (int i=0; i < 4; i++) {
+		dist[i] = DBL_MAX;
+	}
     for (map<GCoord,PointOffset>::iterator ipo=offsets.begin(); ipo!=offsets.end(); ipo++) {
-        double dist2 = pos.distance2(ipo->second.point);
+        double dist2 = pos.distance2(ipo->first);
 //		cout << "neighborhood " << dist2 << *ipo << endl;
         if (dist2 < maxDist2) {
-            neighborhood.push_back(ipo->second);
+			bool inserted = FALSE;
+			int n = min(4, (int)neighborhood.size()+1);
+			for (int i=0; i < n; i++) {
+				if (dist2 < dist[i]) { // insert here
+					if (dist[i] < DBL_MAX) {
+						//cout << "insert@" << i<< ":" << ipo->second << " " << dist2 << " < " << dist[i] << " " << neighborhood.at(i) << endl;
+					} else {
+						//cout << "insert@" << i<< ":" << ipo->second << " " << dist2 << " < " << dist[i] << " " << endl;
+					}
+					neighborhood.insert(neighborhood.begin()+i, ipo->second);
+					for (int j=n; --j > i; ) {
+						cout << "dist[" << j << "] " <<  dist[j] << "=" << dist[j-1] <<endl;
+						dist[j] = dist[j-1];
+					}
+					dist[i] = dist2;
+					inserted = TRUE;
+					break;
+				} else {
+					//cout << "skip@" << i<< ":" << ipo->second << dist2 << " < " << dist[i] << " " << neighborhood.at(i) << endl;
+				}
+			}
+            if (!inserted) {
+				neighborhood.push_back(ipo->second);
+			}
         }
     }
 
@@ -166,48 +199,31 @@ int PointOffsetFilter::writeln(const char *value) {
     char buf[255];
 
     if (chars) {
-		GCoord sourceNew = source;
+		GCoord newDomain  = domain;
         if (matcher.coord.x != HUGE_VAL) {
-			sourceNew.x = matcher.coord.x;
+			newDomain.x = matcher.coord.x;
         }
         if (matcher.coord.y != HUGE_VAL) {
-			sourceNew.y = matcher.coord.y;
+			newDomain.y = matcher.coord.y;
         }
         if (matcher.coord.z != HUGE_VAL) {
-			sourceNew.z = matcher.coord.z;
+			newDomain.z = matcher.coord.z;
         }
-		GCoord offset = getOffsetAt(sourceNew);
-		sourceNew = sourceNew + offset;
+		GCoord range = interpolate(newDomain);
 		char *s = buf;
 		*s++ = 'G';
 		*s++ = matcher.code.c_str()[1];
 		if (matcher.code.c_str()[1] == '2' && matcher.code.c_str()[2] == '8') {
 			*s++ = '8';
-			sourceNew = GCoord(0,0,0);
-			if (matcher.coord.x != HUGE_VAL) {
-				*s++ = 'X'; *s++ = '0';
-			}
-			if (matcher.coord.y != HUGE_VAL ) {
-				*s++ = 'Y'; *s++ = '0';
-			}
-			if (matcher.coord.z != HUGE_VAL ) {
-				*s++ = 'Z'; *s++ = '0';
-			}
-		} else {
-			if (sourceNew.x != source.x) {
-				s += sprintf(s, "X%g", sourceNew.x);
-			}
-			if (sourceNew.y != source.y ) {
-				s += sprintf(s, "Y%g", sourceNew.y);
-			}
-			if (sourceNew.z != source.z ) {
-				s += sprintf(s, "Z%g", sourceNew.z);
-			}
+			range = GCoord(0,0,0);
 		}
+		s += sprintf(s, "X%g", range.x);
+		s += sprintf(s, "Y%g", range.y);
+		s += sprintf(s, "Z%g", range.z);
 		s += snprintf(s, sizeof(buf)-(s-buf), "%s", value+chars);
 		*s = 0;
         _next.writeln(buf);
-		source = sourceNew;
+		domain = newDomain;
     } else {
         _next.writeln(value);
     }

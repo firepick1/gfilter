@@ -104,6 +104,18 @@ typedef struct GCoord {
     inline bool friend operator!=(const GCoord& lhs, const GCoord &rhs) {
         return !(lhs==rhs);
     }
+	inline GCoord trunc(int places) {
+		double limit = pow(10.0,-places);
+		if (-limit < x && x < limit) {
+			x = 0;
+		}
+		if (-limit < y && y < limit) {
+			y = 0;
+		}
+		if (-limit < z && z < limit) {
+			z = 0;
+		}
+	}
     inline bool friend operator<(const GCoord& lhs, const GCoord &rhs) {
         int cmp = lhs.norm2 - rhs.norm2;
         if (cmp == 0) {
@@ -143,6 +155,11 @@ typedef struct PointOffset {
     inline bool friend operator<(const PointOffset& lhs, const PointOffset &rhs) {
         return lhs.point < rhs.point;
     };
+	inline string toString() const {
+		char buf[255];
+		snprintf(buf, sizeof(buf), "point:%s offset:%s", point.toString().c_str(), offset.toString().c_str());
+		return string(buf);
+	}
 } PointOffset, *PointOffsetPtr;
 
 typedef class IGCodeMatcher {
@@ -234,7 +251,7 @@ typedef class DeltaFilter:public GFilterBase {
 
 typedef class PointOffsetFilter:public GFilterBase {
     private:
-		GCoord source;
+		GCoord domain;	// current input domain position 
         double offsetRadius;
         GMoveMatcher matcher;
         map<GCoord, PointOffset> offsets; // TODO: use PCL octtree or something
@@ -243,7 +260,7 @@ typedef class PointOffsetFilter:public GFilterBase {
         PointOffsetFilter (IGFilter & next, json_t* config=NULL);
 		int configure(json_t *config);
         virtual int writeln (const char *value);
-        GCoord getOffsetAt(GCoord pos);
+        GCoord interpolate(GCoord pos);
         vector<PointOffset> offsetNeighborhood(GCoord pos, double radius);
         void setOffsetAt(GCoord pos, GCoord offset);
         double getOffsetRadius() {
