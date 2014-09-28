@@ -252,6 +252,30 @@ void testCenter() {
 	ASSERTEQUALS("G0X0Y10Z0", sink[line].c_str());
 	line++;
 
+	gcode = "G0X5Y0Z0";
+	pof.writeln(gcode);
+	cout << gcode << " -> " << sink[line] << endl;
+	ASSERTEQUALS("G0X13.7285Y0.103093Z0", sink[line].c_str());
+	line++;
+
+	gcode = "G0X-10Y0Z0";
+	pof.writeln(gcode);
+	cout << gcode << " -> " << sink[line] << endl;
+	ASSERTEQUALS("G0X12.5633Y-1.8038Z0", sink[line].c_str());
+	line++;;
+
+	gcode = "G0X0Y20Z0";
+	pof.writeln(gcode);
+	cout << gcode << " -> " << sink[line] << endl;
+	ASSERTEQUALS("G0X15.8485Y-2.10766Z0", sink[line].c_str());
+	line++;
+
+	gcode = "G0X0Y100Z0";
+	pof.writeln(gcode);
+	cout << gcode << " -> " << sink[line] << endl;
+	//ASSERTEQUALS("G0X15.8485Y-2.10766Z0", sink[line].c_str());
+	line++;
+
 	cout << "testCenter() PASS" << endl;
 }
 
