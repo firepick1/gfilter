@@ -58,8 +58,8 @@ parseArgs (int argc, char *argv[], int &jsonIndent) {
             help ();
             exit (0);
         } else if (strcmp ("--point-offset", argv[i]) == 0) {
-			LOGINFO("Create PointOffsetFilter");
-            PointOffsetFilterPtr pXYZ = new PointOffsetFilter (*pHead);
+			LOGINFO("Create MappedPointFilter");
+            MappedPointFilterPtr pXYZ = new MappedPointFilter (*pHead);
             pHead = pXYZ;
             filters.push_back (pXYZ);
         } else if (strcmp ("--delta", argv[i]) == 0) {

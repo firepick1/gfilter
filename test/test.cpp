@@ -5,16 +5,16 @@ using namespace gfilter;
 
 void testJSONConfig() {
     const char *json =
-        "{ \"offsets\":[ " \
-        "{\"point\":[0,0,0], \"offset\":[0,0,0]}, " \
-        "{\"point\":[0,0,1], \"offset\":[0,0,1.01]}," \
-        "{\"point\":[0,1,0], \"offset\":[0,1,0.02]}," \
-        "{\"point\":[0,1,1], \"offset\":[0,1,1.02]} " \
+        "{ \"map\":[ " \
+        "{\"domain\":[0,0,0], \"range\":[0,0,0]}, " \
+        "{\"domain\":[0,0,1], \"range\":[0,0,1.01]}," \
+        "{\"domain\":[0,1,0], \"range\":[0,1,0.02]}," \
+        "{\"domain\":[0,1,1], \"range\":[0,1,1.02]} " \
         "]}";
     json_error_t jerr;
     json_t *config = json_loads(json, 0, &jerr);
     StringSink sink;
-    PointOffsetFilter pof(sink, config);
+    MappedPointFilter pof(sink, config);
 
     pof.writeln("G0X0Y0Z1 E3F4");
     ASSERTEQUALS("G0X0Y0Z1.01E3F4", sink[0].c_str());
@@ -98,10 +98,10 @@ void assertGCoord(GCoord expected, GCoord actual, const char *fname, long line) 
 	}
 }
 
-void testPointOffsetFilter() {
-    cout << "testPointOffsetFilter() -------- BEGIN -----" << endl;
+void testMappedPointFilter() {
+    cout << "testMappedPointFilter() -------- BEGIN -----" << endl;
     StringSink sink;
-    PointOffsetFilter xyz(sink);
+    MappedPointFilter xyz(sink);
 
     xyz.writeln("arbitrary-gcode");
     assert(sink.strings[0] == "arbitrary-gcode");
@@ -110,68 +110,68 @@ void testPointOffsetFilter() {
     xyz.writeln("g1y-12.345");
     ASSERTEQUALS("G1X1Y-12.345Z3", sink.strings[2].c_str());
 
-    vector<PointOffset> neighborhood;
+    vector<MappedPoint> neighborhood;
 
-    neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
+    neighborhood = xyz.domainNeighborhood(ORIGIN, 2);
     assert(0 == neighborhood.size());
 
-    assert(0 == xyz.getOffsetRadius());
-    xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.1,.1));
-    assert(sqrt(3) == xyz.getOffsetRadius());
+    assert(0 == xyz.getDomainRadius());
+    xyz.mapPoint(GCoord(1,1,1), GCoord(1.1,1.1,1.1));
+    assert(sqrt(3) == xyz.getDomainRadius());
 
-    neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
+    neighborhood = xyz.domainNeighborhood(ORIGIN, 2);
     ASSERTEQUAL(1, neighborhood.size());
     cout << neighborhood[0] << endl;
-    assert(GCoord(1,1,1) == neighborhood[0].point);
-    assert(GCoord(.1,.1,.1) == neighborhood[0].offset);
-    assert(GCoord(.1,.1,.1) == xyz.interpolate(GCoord(1,1,1)));
+    assert(GCoord(1,1,1) == neighborhood[0].domain);
+    assert(GCoord(1.1,1.1,1.1) == neighborhood[0].range);
+    assert(GCoord(1.1,1.1,1.1) == xyz.interpolate(GCoord(1,1,1)));
 
-    /// Verify that single offset specifies a universal offset
-    assert(GCoord(.1,.1,.1) == xyz.interpolate(GCoord(-100,100,.001)));
-    assert(GCoord(.1,.1,.1) == xyz.interpolate(GCoord(0,0,1)));
+    /// Verify that single MappedPoint specifies a universal mapping
+    ASSERTGCOORD(GCoord(-99.9,100.1,0.101), xyz.interpolate(GCoord(-100,100,.001)));
+    ASSERTGCOORD(GCoord(0.1,0.1,1.1), xyz.interpolate(GCoord(0,0,1)));
 
     // Test neighborhood calculation distance
-    xyz.setOffsetAt(GCoord(2,2,2), GCoord(-.1,-.1,.1));
-    neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
+    xyz.mapPoint(GCoord(2,2,2), GCoord(-.1,-.1,.1));
+    neighborhood = xyz.domainNeighborhood(ORIGIN, 2);
     assert(1 == neighborhood.size());
-    assert(GCoord(1,1,1) == neighborhood[0].point);
-    neighborhood = xyz.offsetNeighborhood(GCoord(2,2,2) , 2);
+    assert(GCoord(1,1,1) == neighborhood[0].domain);
+    neighborhood = xyz.domainNeighborhood(GCoord(2,2,2) , 2);
     assert(2 == neighborhood.size());
-    neighborhood = xyz.offsetNeighborhood(GCoord(3,3,3) , 2);
+    neighborhood = xyz.domainNeighborhood(GCoord(3,3,3) , 2);
     assert(1 == neighborhood.size());
-    assert(GCoord(2,2,2) == neighborhood[0].point);
+    assert(GCoord(2,2,2) == neighborhood[0].domain);
 
-    cout << "Verify that offsets can be changed..." << endl;
-    xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.01,.001));
-    neighborhood = xyz.offsetNeighborhood(ORIGIN, 2);
+    cout << "Verify that point mappings can be changed..." << endl;
+    xyz.mapPoint(GCoord(1,1,1), GCoord(.1,.01,.001));
+    neighborhood = xyz.domainNeighborhood(ORIGIN, 2);
     for (int i = 0; i < neighborhood.size(); i++) {
         cout << neighborhood[i] << endl;
     }
     assert(1 == neighborhood.size());
-    assert(GCoord(1,1,1) == neighborhood[0].point);
-    assert(GCoord(.1,.01,.001) == neighborhood[0].offset);
+    assert(GCoord(1,1,1) == neighborhood[0].domain);
+    assert(GCoord(.1,.01,.001) == neighborhood[0].range);
 
     cout << "Testing unit lattice from (1,1,1) to (2,2,2)" << endl;
-    xyz.setOffsetAt(GCoord(1,1,1), GCoord(.1,.01,.001));
-    xyz.setOffsetAt(GCoord(1,1,2), GCoord(.1,.01,.002));
-    xyz.setOffsetAt(GCoord(1,2,1), GCoord(.1,.02,.001));
-    xyz.setOffsetAt(GCoord(1,2,2), GCoord(.1,.02,.002));
-    xyz.setOffsetAt(GCoord(2,1,1), GCoord(.2,.01,.001));
-    xyz.setOffsetAt(GCoord(2,1,2), GCoord(.2,.01,.002));
-    xyz.setOffsetAt(GCoord(2,2,1), GCoord(.2,.02,.001));
-    xyz.setOffsetAt(GCoord(2,2,2), GCoord(.2,.02,.002));
-    ASSERTEQUAL(sqrt(3), xyz.getOffsetRadius());
+    xyz.mapPoint(GCoord(1,1,1), GCoord(.1,.01,.001));
+    xyz.mapPoint(GCoord(1,1,2), GCoord(.1,.01,.002));
+    xyz.mapPoint(GCoord(1,2,1), GCoord(.1,.02,.001));
+    xyz.mapPoint(GCoord(1,2,2), GCoord(.1,.02,.002));
+    xyz.mapPoint(GCoord(2,1,1), GCoord(.2,.01,.001));
+    xyz.mapPoint(GCoord(2,1,2), GCoord(.2,.01,.002));
+    xyz.mapPoint(GCoord(2,2,1), GCoord(.2,.02,.001));
+    xyz.mapPoint(GCoord(2,2,2), GCoord(.2,.02,.002));
+    ASSERTEQUAL(sqrt(3), xyz.getDomainRadius());
     ASSERTGCOORD(GCoord(0.15,0.015,0.0015), xyz.interpolate(GCoord(1.5,1.5,1.5)));
     ASSERTGCOORD(GCoord(0.1,0.01,0.0015), xyz.interpolate(GCoord(1,1,1.5)));
-    ASSERTGCOORD(GCoord(0,0,0), xyz.interpolate(GCoord(-20,-20,-20)));
-    ASSERTGCOORD(GCoord(0,0,0), xyz.interpolate(GCoord(1,1,-2)));
+    ASSERTGCOORD(GCoord(-20,-20,-20), xyz.interpolate(GCoord(-20,-20,-20)));
+    ASSERTGCOORD(GCoord(1,1,-2), xyz.interpolate(GCoord(1,1,-2)));
     ASSERTGCOORD(GCoord(.2,0.01,.002), xyz.interpolate(GCoord(2,1,2)));
     ASSERTGCOORD(GCoord(.21,0.021,.0021), xyz.interpolate(GCoord(2.1,2.1,2.1)));
     ASSERTGCOORD(GCoord(0.2,0.02,0.002), xyz.interpolate(GCoord(2.9,2.9,2.9))); // N=1
 
     cout << "Testing neighborhood starvation with points exterior to lattice" << endl;
     ASSERTGCOORD(GCoord(0.19,0.019,0.0021), xyz.interpolate(GCoord(1.9,1.9,2.1))); // N=8
-    // Degenerate tetrahedron (note sudden and unfortunate transition in offset)
+    // Degenerate tetrahedron (note sudden and unfortunate transition in interpolated values)
     ASSERTGCOORD(GCoord(0.165677,0.0165677,0.002), xyz.interpolate(GCoord(1.9,1.9,2.4))); // N=7
     ASSERTGCOORD(GCoord(0.163,0.0163,0.002), xyz.interpolate(GCoord(1.9,1.9,2.5))); // N=5
     ASSERTGCOORD(GCoord(0.159278,0.0159278,0.002), xyz.interpolate(GCoord(1.9,1.9,2.7))); // N=5
@@ -234,8 +234,8 @@ void testCenter() {
     json_error_t jerr;
     json_t *config = json_loads(json.c_str(), 0, &jerr);
     StringSink sink;
-    PointOffsetFilter pof(sink, config);
-	pof.setOffsetRadius(24);// depends on grid sampling distance and pixels/mm	
+    MappedPointFilter pof(sink, config);
+	pof.setDomainRadius(24);// depends on grid sampling distance and pixels/mm	
 
 	int line=0;
 	const char *gcode;
@@ -263,7 +263,7 @@ int main() {
     testGCoord();
     testMatchNumber();
     testGMoveMatcher();
-    testPointOffsetFilter();
+    testMappedPointFilter();
 	testCenter();
 
     cout << "ALL TESTS PASS" << endl;

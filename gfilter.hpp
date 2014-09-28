@@ -136,31 +136,31 @@ typedef struct GCoord {
 
 const GCoord ORIGIN(0,0,0);
 
-typedef struct PointOffset {
-    GCoord point;
-    GCoord offset;
-    inline friend ostream& operator<<(ostream& os, const PointOffset& value) {
-        os << "(" << value.point.x << "," << value.point.y << "," << value.point.z << ")"
+typedef struct MappedPoint {
+    GCoord domain;
+    GCoord range;
+    inline friend ostream& operator<<(ostream& os, const MappedPoint& value) {
+        os << "(" << value.domain.x << "," << value.domain.y << "," << value.domain.z << ")"
            << ":"
-           << "(" << value.offset.x << "," << value.offset.y << "," << value.offset.z << ")"
+           << "(" << value.range.x << "," << value.range.y << "," << value.range.z << ")"
            ;
         return os;
     }
-    inline bool friend operator==(const PointOffset& lhs, const PointOffset &rhs) {
-        return lhs.point==rhs.point && lhs.offset==rhs.offset;
+    inline bool friend operator==(const MappedPoint& lhs, const MappedPoint &rhs) {
+        return lhs.domain==rhs.domain && lhs.range==rhs.range;
     }
-    inline bool friend operator!=(const PointOffset& lhs, const PointOffset &rhs) {
+    inline bool friend operator!=(const MappedPoint& lhs, const MappedPoint &rhs) {
         return !(lhs==rhs);
     }
-    inline bool friend operator<(const PointOffset& lhs, const PointOffset &rhs) {
-        return lhs.point < rhs.point;
+    inline bool friend operator<(const MappedPoint& lhs, const MappedPoint &rhs) {
+        return lhs.domain < rhs.domain;
     };
 	inline string toString() const {
 		char buf[255];
-		snprintf(buf, sizeof(buf), "point:%s offset:%s", point.toString().c_str(), offset.toString().c_str());
+		snprintf(buf, sizeof(buf), "domain:%s range:%s", domain.toString().c_str(), range.toString().c_str());
 		return string(buf);
 	}
-} PointOffset, *PointOffsetPtr;
+} MappedPoint, *MappedPointPtr;
 
 typedef class IGCodeMatcher {
     public:
@@ -249,27 +249,27 @@ typedef class DeltaFilter:public GFilterBase {
         virtual int writeln (const char *value);
 } DeltaFilter, *DeltaFilterPtr;
 
-typedef class PointOffsetFilter:public GFilterBase {
+typedef class MappedPointFilter:public GFilterBase {
     private:
 		GCoord domain;	// current input domain position 
-        double offsetRadius;
+        double domainRadius;
         GMoveMatcher matcher;
-        map<GCoord, PointOffset> offsets; // TODO: use PCL octtree or something
+        map<GCoord, MappedPoint> mapping; // TODO: use PCL octtree or something
 
     public:
-        PointOffsetFilter (IGFilter & next, json_t* config=NULL);
+        MappedPointFilter (IGFilter & next, json_t* config=NULL);
 		int configure(json_t *config);
         virtual int writeln (const char *value);
-        GCoord interpolate(GCoord pos);
-        vector<PointOffset> offsetNeighborhood(GCoord pos, double radius);
-        void setOffsetAt(GCoord pos, GCoord offset);
-        double getOffsetRadius() {
-            return offsetRadius;
+        GCoord interpolate(GCoord domainXYZ);
+        vector<MappedPoint> domainNeighborhood(GCoord domainXYZ, double radius);
+        void mapPoint(GCoord domain, GCoord range);
+        double getDomainRadius() {
+            return domainRadius;
         }
-        void setOffsetRadius(double value) {
-            offsetRadius = value;
+        void setDomainRadius(double value) {
+            domainRadius = value;
         }
-} PointOffsetFilter, *PointOffsetFilterPtr;
+} MappedPointFilter, *MappedPointFilterPtr;
 
 }				// namespace gfilter
 

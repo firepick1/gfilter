@@ -78,7 +78,7 @@ set(TARGET_LIB_FILES
 	FireLog.cpp 
 	gfilter.cpp
 	delta.cpp
-	pointoffset.cpp
+	mappedpoint.cpp
 	matcher.cpp
 	matrix.cpp
 	jo_util.cpp
