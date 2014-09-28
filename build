@@ -6,7 +6,7 @@ echo "DATE	: `date`"
 cv="install"
 
 function help() {
-  echo "Build gdelta"
+  echo "Build $0"
   echo 
   echo "EXAMPLES:"
   echo "  ./build"
@@ -108,7 +108,7 @@ echo "STATUS	: creating makefile"
 cmake \
   -DCMAKE_INSTALL_PREFIX:PATH=$installPrefix "$@" \
   .
-echo "STATUS	: building and installing gdelta"
+echo "STATUS	: building and installing $0"
 make
 if [ $? -ne 0 ]; then echo "ERROR	: make failed"; exit -1; fi
 sudo -E make install
@@ -116,4 +116,4 @@ if [ $? -ne 0 ]; then echo "ERROR	: make failed"; exit -1; fi
 
 echo "----------------------------------"
 echo "DATE	: `date`"
-echo "SUCCESS	: gdelta installed"
+echo "SUCCESS	: $0 installed"
