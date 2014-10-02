@@ -25,8 +25,8 @@ THE SOFTWARE.
 */
 
 
-#ifndef TINYASSERT_HPP
-#define TINYASSERT_HPP
+#ifndef FIREUTILS_HPP
+#define FIREUTILS_HPP
 
 #include <assert.h>
 #include <iostream>
