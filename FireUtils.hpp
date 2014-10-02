@@ -32,6 +32,7 @@ THE SOFTWARE.
 #include <iostream>
 #include "FireLog.h"
 #include "string.h"
+#include <errno.h>
 
 #ifndef FALSE
 #define FALSE 0
@@ -47,9 +48,36 @@ inline int fail(int rc) {
     std::cout << "***ASSERT FAILED*** expected:0 actual:" << rc << std::endl;
     return FALSE;
 }
+#define ASSERTNOERRNO(exp) assertnoerrno(((long) exp, __FILE__,__LINE__)
 #define ASSERTNONZERO(exp) assertnonzero((long) exp, __FILE__, __LINE__)
 #define ASSERTZERO(exp) assertzero((long) exp, __FILE__, __LINE__)
 #define ASSERT(e) ASSERTNONZERO(e)
+
+inline void
+assertnoerrno(long actual, const char* fname, long line) {
+    if (actual>=0) {
+        return;
+    }
+
+    const char *errstr;
+    switch (errno) {
+    case EACCES: errstr = "EACCESS"; break;
+    case EEXIST: errstr = "EEXIST"; break;
+    case EINVAL: errstr = "EINVAL"; break;
+    case ENFILE: errstr = "ENFILE"; break;
+    case ENOENT: errstr = "ENOENT"; break;
+    case ENOMEM: errstr = "ENOMEM"; break;
+    case ENOSPC: errstr = "ENOSPC"; break;
+    case EPERM: errstr = "EPERM"; break;
+    default: errstr = ""; break;
+    }
+    char buf[255];
+    snprintf(buf, sizeof(buf), "%s@%ld return:%ld errno:%s (%d) ", 
+		fname, line, actual, errstr, errno);
+    LOGERROR(buf);
+    std::cerr << "***ASSERT FAILED*** " << buf << std::endl;
+    assert(false);
+}
 
 inline void
 assertzero(long actual, const char* fname, long line) {
