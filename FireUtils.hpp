@@ -116,8 +116,13 @@ assertEqual(double expected, double actual, double tolerance, const char* contex
     }
 
     char buf[255];
-    snprintf(buf, sizeof(buf), "%s expected:%g actual:%g tolerance:%g line:%ld",
-             context, expected, actual, tolerance, line);
+	if (tolerance == 0) {
+		snprintf(buf, sizeof(buf), "%s expected:%ld actual:%ld line:%ld",
+				 context, (long) expected, (long) actual, line);
+	} else {
+		snprintf(buf, sizeof(buf), "%s expected:%g actual:%g tolerance:%g line:%ld",
+				 context, expected, actual, tolerance, line);
+	}
     LOGERROR(buf);
     std::cerr << "***ASSERT FAILED*** " << buf << std::endl;
     assert(false);
