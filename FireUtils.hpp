@@ -48,10 +48,12 @@ inline int fail(int rc) {
     std::cout << "***ASSERT FAILED*** expected:0 actual:" << rc << std::endl;
     return FALSE;
 }
-#define ASSERTNOERRNO(exp) assertnoerrno((long) exp, __FILE__,__LINE__)
-#define ASSERTNONZERO(exp) assertnonzero((long) exp, __FILE__, __LINE__)
-#define ASSERTZERO(exp) assertzero((long) exp, __FILE__, __LINE__)
 #define ASSERT(e) ASSERTNONZERO(e)
+#define ASSERTNOERRNO(exp) assertnoerrno((long) (exp), __FILE__,__LINE__)
+#define ASSERTNONZERO(exp) assertnonzero((long) (exp), __FILE__, __LINE__)
+#define ASSERTZERO(exp) assertzero((long) (exp), __FILE__, __LINE__)
+#define ASSERTEQUAL(e,a) assertEqual((double)(e),(double)(a),0,__FILE__,__LINE__)
+#define ASSERTEQUALT(e,a,t) assertEqual((e),(a),t,__FILE__,__LINE__)
 
 inline void
 assertnoerrno(long actual, const char* fname, long line) {
@@ -105,8 +107,6 @@ assertnonzero(long actual, const char* fname, long line) {
     assert(false);
 }
 
-#define ASSERTEQUAL(e,a) assertEqual((double)e,(double)a,0,__FILE__,__LINE__)
-#define ASSERTEQUALT(e,a,t) assertEqual(e,a,t,__FILE__,__LINE__)
 inline void
 assertEqual(double expected, double actual, double tolerance, const char* context, long line)
 {
